@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShopWise - Customer Insights</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #e2e8f0;
+      --accent: #6366f1;
+      --accent-dark: #4f46e5;
+      --success: #10b981;
+      --error: #ef4444;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      color: var(--accent);
+      margin-bottom: 2rem;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    }
+    .upload-area {
+      text-align: center;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    .upload-btn {
+      background: var(--accent);
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-block;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+    .upload-btn:hover { background: var(--accent-dark); }
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 0.9rem 1.8rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      margin: 0.5rem;
+      transition: all 0.2s;
+    }
+    button:hover { background: var(--accent-dark); }
+    button:disabled { background: #475569; cursor: not-allowed; }
+    #status {
+      margin: 1.5rem 0;
+      font-size: 1.1rem;
+      text-align: center;
+      min-height: 1.5rem;
+    }
+    .success { color: var(--success); }
+    .error { color: var(--error); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid #334155;
+    }
+    th { background: #1e293b; color: #94a3b8; }
+    tr:hover { background: #0f172a; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ShopWise</h1>
+
+    <div class="card">
+      <div class="upload-area">
+        <label for="file" class="upload-btn">Choose Shopping Dataset (CSV or XLSX)</label>
+        <input type="file" id="file" accept=".csv,.xlsx">
+      </div>
+      <div style="text-align:center; margin-top:1.5rem;">
+        <button onclick="preprocessFile()">Preprocess Data</button>
+        <button id="clusterBtn" disabled onclick="runClustering()">Run Clustering</button>
+      </div>
+      <div id="status">Ready to start...</div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0;">Customer Preview (after clustering)</h2>
+      <table id="resultsTable">
+        <thead>
+          <tr>
+            <th>Customer ID</th>
+            <th>Age</th>
+            <th>Gender</th>
+            <th>Purchase Amount</th>
+            <th>Review Rating</th>
+            <th>Cluster</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const status = document.getElementById('status');
+    const clusterBtn = document.getElementById('clusterBtn');
+
+    async function preprocessFile() {
+      const file = document.getElementById('file').files[0];
+      if (!file) return alert('Select a file first');
+
+      status.textContent = 'Preprocessing...';
+      status.className = '';
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const result = await eel.preprocess(e.target.result, file.name)();
+        status.textContent = result;
+        if (result.includes('Success')) {
+          status.className = 'success';
+          clusterBtn.disabled = false;
+        } else {
+          status.className = 'error';
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    async function runClustering() {
+      status.textContent = 'Clustering...';
+      status.className = '';
+
+      const result = await eel.cluster()();
+      status.textContent = result;
+      if (result.includes('done')) {
+        status.className = 'success';
+        updateTable();
+      } else {
+        status.className = 'error';
+      }
+    }
+
+    async function updateTable() {
+      const data = await eel.get_results()();
+      const tbody = document.querySelector('#resultsTable tbody');
+      tbody.innerHTML = '';
+      data.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${row['Customer ID'] || '-'}</td>
+          <td>${row['Age'] || '-'}</td>
+          <td>${row['Gender'] || '-'}</td>
+          <td>${row['Purchase Amount (USD)'] || '-'}</td>
+          <td>${row['Review Rating'] || '-'}</td>
+          <td>${row['Cluster'] || '-'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+  </script>
+</body>
+</html>

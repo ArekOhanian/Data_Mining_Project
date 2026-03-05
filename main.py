@@ -1,69 +1,61 @@
 import eel
+import sys
+import os
+import pandas as pd
+from io import StringIO, BytesIO
 
-# Import your code from project.py
+# Add current folder to path so project.py is found
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from project import ShopWisePreprocessor, ShopWiseClustering
 
-eel.init('web')   # looks in the web folder for html/css/js
+eel.init('web')
 
-processed = None   # will hold preprocessed data
-clustered = None   # will hold clustered data
+processed_data = None
+clustered_data = None
 
-# This function runs when frontend button is clicked
 @eel.expose
-def start_preprocess(file_text, file_name):
-    global processed
-
+def preprocess(file_content, file_name):
+    global processed_data
     try:
-        # very simple - assume csv for now
-        from io import StringIO
-        import pandas as pd
-        data = pd.read_csv(StringIO(file_text))
+        if file_name.lower().endswith('.csv'):
+            df = pd.read_csv(StringIO(file_content))
+        else:
+            df = pd.read_excel(BytesIO(file_content.encode()))  # better for xlsx
 
-        # use your class
-        prep = ShopWisePreprocessor(data)
+        prep = ShopWisePreprocessor(df)
         prep.handle_missing_values('auto')
         prep.encode_categorical_variables('label')
         prep.scale_numerical_features('standard')
         prep.create_feature_engineering()
         prep.remove_outliers('iqr')
+        processed_data = prep.get_preprocessed_data()
 
-        processed = prep.get_preprocessed_data()
-
-        return "Preprocessing done! Rows: " + str(len(processed))
-
+        return f"Success! {len(processed_data)} rows processed."
     except Exception as e:
-        return "Error: " + str(e)
+        return f"Error: {str(e)}"
 
-
-# Simple clustering button
 @eel.expose
-def start_clustering():
-    global clustered
-
-    if processed is None:
-        return "Error: First preprocess the data"
+def cluster():
+    global clustered_data
+    if processed_data is None:
+        return "Error: Run preprocess first"
 
     try:
-        clust = ShopWiseClustering(processed)
-        clust.perform_clustering(n_clusters=4)   # fixed 4 clusters for simplicity
-        clustered = clust.get_clustered_data()
+        clust = ShopWiseClustering(processed_data)
+        X = clust.prepare_clustering_data()
+        optimal_k, _, _ = clust.find_optimal_clusters(X, max_clusters=8)
+        n = optimal_k if optimal_k else 4
+        clust.perform_clustering(n_clusters=n)
+        clustered_data = clust.get_clustered_data()
 
-        return "Clustering done! Check console for details"
-
+        return f"Clustering done. Optimal clusters: {n}"
     except Exception as e:
-        return "Error: " + str(e)
+        return f"Error: {str(e)}"
 
-
-# Show some data
 @eel.expose
-def show_some_rows():
-    if clustered is None:
+def get_results():
+    if clustered_data is None:
         return []
+    return clustered_data.head(15)[['Customer ID', 'Age', 'Gender', 'Purchase Amount (USD)', 'Review Rating', 'Cluster']].to_dict('records')
 
-    # return first 10 rows as list of dicts
-    rows = clustered.head(10).to_dict('records')
-    return rows
-
-
-# Start the webpage
-eel.start('index.html', size=(900, 600))
+eel.start('index.html', size=(1300, 850))
