@@ -88,6 +88,11 @@
     }
     th { background: #1e293b; color: #94a3b8; }
     tr:hover { background: #0f172a; }
+    #fileName {
+      margin-top: 0.75rem;
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
   </style>
 </head>
 <body>
@@ -96,8 +101,9 @@
 
     <div class="card">
       <div class="upload-area">
-        <label for="file" class="upload-btn">Choose Shopping Dataset (CSV or XLSX)</label>
+        <label for="file" class="upload-btn">Choose Shopping Dataset</label>
         <input type="file" id="file" accept=".csv,.xlsx">
+        <p id="fileName">No file selected</p>
       </div>
       <div style="text-align:center; margin-top:1.5rem;">
         <button onclick="preprocessFile()">Preprocess Data</button>
@@ -107,7 +113,7 @@
     </div>
 
     <div class="card">
-      <h2 style="margin-top:0;">Customer Preview (after clustering)</h2>
+      <h2 style="margin-top:0;">Customer Preview</h2>
       <table id="resultsTable">
         <thead>
           <tr>
@@ -127,6 +133,12 @@
   <script>
     const status = document.getElementById('status');
     const clusterBtn = document.getElementById('clusterBtn');
+    const fileNameDisplay = document.getElementById('fileName');
+
+    document.getElementById('file').addEventListener('change', function() {
+      const file = this.files[0];
+      fileNameDisplay.textContent = file ? `Selected: ${file.name}` : 'No file selected';
+    });
 
     async function preprocessFile() {
       const file = document.getElementById('file').files[0];
@@ -137,13 +149,19 @@
 
       const reader = new FileReader();
       reader.onload = async function(e) {
-        const result = await eel.preprocess(e.target.result, file.name)();
-        status.textContent = result;
-        if (result.includes('Success')) {
-          status.className = 'success';
-          clusterBtn.disabled = false;
-        } else {
+        try {
+          const result = await eel.preprocess(e.target.result, file.name)();
+          status.textContent = result;
+          if (result.includes('Success')) {
+            status.className = 'success';
+            clusterBtn.disabled = false;
+          } else {
+            status.className = 'error';
+          }
+        } catch (err) {
+          status.textContent = 'Frontend error: ' + err.message;
           status.className = 'error';
+          console.error('Preprocess failed:', err);
         }
       };
       reader.readAsText(file);
@@ -153,32 +171,42 @@
       status.textContent = 'Clustering...';
       status.className = '';
 
-      const result = await eel.cluster()();
-      status.textContent = result;
-      if (result.includes('done')) {
-        status.className = 'success';
-        updateTable();
-      } else {
+      try {
+        const result = await eel.cluster()();
+        status.textContent = result;
+        if (result.includes('done')) {
+          status.className = 'success';
+          updateTable();
+        } else {
+          status.className = 'error';
+        }
+      } catch (err) {
+        status.textContent = 'Clustering frontend error: ' + err.message;
         status.className = 'error';
       }
     }
 
     async function updateTable() {
-      const data = await eel.get_results()();
-      const tbody = document.querySelector('#resultsTable tbody');
-      tbody.innerHTML = '';
-      data.forEach(row => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${row['Customer ID'] || '-'}</td>
-          <td>${row['Age'] || '-'}</td>
-          <td>${row['Gender'] || '-'}</td>
-          <td>${row['Purchase Amount (USD)'] || '-'}</td>
-          <td>${row['Review Rating'] || '-'}</td>
-          <td>${row['Cluster'] || '-'}</td>
-        `;
-        tbody.appendChild(tr);
-      });
+      try {
+        const data = await eel.get_results()();
+        const tbody = document.querySelector('#resultsTable tbody');
+        tbody.innerHTML = '';
+        data.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${row['Customer ID'] || '-'}</td>
+            <td>${row['Age'] || '-'}</td>
+            <td>${row['Gender'] || '-'}</td>
+            <td>${row['Purchase Amount (USD)'] || '-'}</td>
+            <td>${row['Review Rating'] || '-'}</td>
+            <td>${row['Cluster'] || '-'}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        status.textContent = 'Table update error: ' + err.message;
+        status.className = 'error';
+      }
     }
   </script>
 </body>
