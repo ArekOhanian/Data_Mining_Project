@@ -101,7 +101,7 @@
 
     <div class="card">
       <div class="upload-area">
-        <label for="file" class="upload-btn">Choose Shopping Dataset</label>
+        <label for="file" class="upload-btn">Choose Dataset</label>
         <input type="file" id="file" accept=".csv,.xlsx">
         <p id="fileName">No file selected</p>
       </div>
@@ -113,7 +113,12 @@
     </div>
 
     <div class="card">
-      <h2 style="margin-top:0;">Customer Preview</h2>
+      <h2>Dataset Summary</h2>
+      <div id="datasetInfo">No data loaded yet. Preprocess a file to see summary.</div>
+    </div>
+
+    <div class="card">
+      <h2>Customer Preview</h2>
       <table id="resultsTable">
         <thead>
           <tr>
@@ -155,6 +160,7 @@
           if (result.includes('Success')) {
             status.className = 'success';
             clusterBtn.disabled = false;
+            showDatasetInfo();
           } else {
             status.className = 'error';
           }
@@ -181,7 +187,7 @@
           status.className = 'error';
         }
       } catch (err) {
-        status.textContent = 'Clustering frontend error: ' + err.message;
+        status.textContent = 'Clustering error: ' + err.message;
         status.className = 'error';
       }
     }
@@ -204,8 +210,44 @@
           tbody.appendChild(tr);
         });
       } catch (err) {
-        status.textContent = 'Table update error: ' + err.message;
+        status.textContent = 'Table error: ' + err.message;
         status.className = 'error';
+      }
+    }
+
+    async function showDatasetInfo() {
+      try {
+        const info = await eel.get_dataset_info()();
+        const div = document.getElementById('datasetInfo');
+        if (!info.loaded) {
+          div.innerHTML = info.info;
+          return;
+        }
+
+        let html = `<p><strong>Success!</strong> ${info.rows} rows × ${info.columns} columns</p>`;
+        html += '<p><strong>Columns:</strong> ' + info.column_names.join(', ') + '</p>';
+        html += '<h3>First 5 rows:</h3>';
+        html += '<table><thead><tr>';
+
+        if (info.first_5_rows.length > 0) {
+          Object.keys(info.first_5_rows[0]).forEach(key => {
+            html += `<th>${key}</th>`;
+          });
+          html += '</tr></thead><tbody>';
+
+          info.first_5_rows.forEach(row => {
+            html += '<tr>';
+            Object.values(row).forEach(val => {
+              html += `<td>${val}</td>`;
+            });
+            html += '</tr>';
+          });
+          html += '</tbody></table>';
+        }
+
+        div.innerHTML = html;
+      } catch (err) {
+        document.getElementById('datasetInfo').innerHTML = 'Info error: ' + err.message;
       }
     }
   </script>

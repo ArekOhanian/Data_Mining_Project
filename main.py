@@ -4,7 +4,7 @@ import os
 import pandas as pd
 from io import StringIO, BytesIO
 
-# Add current folder to path so project.py is found
+# Add current folder to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from project import ShopWisePreprocessor, ShopWiseClustering
 
@@ -20,7 +20,7 @@ def preprocess(file_content, file_name):
         if file_name.lower().endswith('.csv'):
             df = pd.read_csv(StringIO(file_content))
         else:
-            df = pd.read_excel(BytesIO(file_content.encode()))  # better for xlsx
+            df = pd.read_excel(BytesIO(file_content.encode()))
 
         prep = ShopWisePreprocessor(df)
         prep.handle_missing_values('auto')
@@ -32,7 +32,10 @@ def preprocess(file_content, file_name):
 
         return f"Success! {len(processed_data)} rows processed."
     except Exception as e:
-        return f"Error: {str(e)}"
+        import traceback
+        error = traceback.format_exc()
+        print("PREPROCESS ERROR:", error)
+        return f"Error: {str(e)} (check terminal)"
 
 @eel.expose
 def cluster():
@@ -47,15 +50,31 @@ def cluster():
         n = optimal_k if optimal_k else 4
         clust.perform_clustering(n_clusters=n)
         clustered_data = clust.get_clustered_data()
-
         return f"Clustering done. Optimal clusters: {n}"
     except Exception as e:
-        return f"Error: {str(e)}"
+        import traceback
+        error = traceback.format_exc()
+        print("CLUSTER ERROR:", error)
+        return f"Error: {str(e)} (check terminal)"
 
 @eel.expose
 def get_results():
     if clustered_data is None:
         return []
     return clustered_data.head(15)[['Customer ID', 'Age', 'Gender', 'Purchase Amount (USD)', 'Review Rating', 'Cluster']].to_dict('records')
+
+@eel.expose
+def get_dataset_info():
+    if processed_data is None:
+        return {"loaded": False, "info": "No data loaded yet"}
+    info = {
+        "loaded": True,
+        "rows": len(processed_data),
+        "columns": len(processed_data.columns),
+        "column_names": list(processed_data.columns),
+        "first_5_rows": processed_data.head(5).to_dict(orient='records'),
+        "status": "Dataset loaded and preprocessed successfully"
+    }
+    return info
 
 eel.start('index.html', size=(1300, 850))
