@@ -70,12 +70,15 @@ def get_results():
 def get_dataset_info():
     if processed_data is None:
         return {"loaded": False}
+
     info = {
         "loaded": True,
         "rows": len(processed_data),
         "columns": len(processed_data.columns),
+        "column_names": list(processed_data.columns),
         "first_5_rows": processed_data.head(5).to_dict('records')
     }
+
     return info
 
 eel.start('index.html', size=(1300, 850), port=0)
