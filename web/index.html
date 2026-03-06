@@ -1,7 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>ShopWise Dashboard</title>
 
@@ -41,20 +44,8 @@ background:#4f46e5;
 }
 
 select{
-padding:10px;
-border-radius:6px;
-border:none;
-background:#6366f1;
-color:white;
+padding:8px;
 margin-left:10px;
-cursor:pointer;
-}
-
-input[type=file]{
-padding:10px;
-background:#6366f1;
-border-radius:6px;
-color:white;
 }
 
 table{
@@ -72,10 +63,8 @@ th{
 color:#94a3b8;
 }
 
-img{
-margin-top:20px;
-max-width:500px;
-}
+.success{color:#10b981;}
+.error{color:#ef4444;}
 
 </style>
 
@@ -97,23 +86,24 @@ max-width:500px;
 
 </div>
 
+
 <div class="card">
 
 <h2>Dataset Summary</h2>
 
-<div id="datasetInfo"></div>
+<div id="datasetInfo">No dataset loaded.</div>
 
 </div>
+
 
 <div class="card">
 
 <h2>Cluster Distribution</h2>
 
-<div id="clusterStats"></div>
-
-<img id="clusterGraph">
+<div id="clusterStats">Run clustering to see results.</div>
 
 </div>
+
 
 <div class="card">
 
@@ -152,6 +142,7 @@ max-width:500px;
 
 </div>
 
+
 <script src="/eel.js"></script>
 
 <script>
@@ -163,6 +154,13 @@ async function preprocessFile(){
 
 const file=document.getElementById("file").files[0]
 
+if(!file){
+alert("Select a file first")
+return
+}
+
+status.innerText="Preprocessing..."
+
 const reader=new FileReader()
 
 reader.onload=async function(e){
@@ -171,7 +169,10 @@ const result=await eel.preprocess(e.target.result,file.name)()
 
 status.innerText=result
 
+if(result.includes("Success")){
+clusterBtn.disabled=false
 showDatasetInfo()
+}
 
 }
 
@@ -181,17 +182,15 @@ reader.readAsText(file)
 
 async function runClustering(){
 
+status.innerText="Running clustering..."
+
 const result=await eel.cluster()()
 
 status.innerText=result
 
-clusterBtn.disabled=false
-
 updateTable()
 
 showClusterStats()
-
-showGraph()
 
 }
 
@@ -259,9 +258,13 @@ async function showDatasetInfo(){
 
 const info=await eel.get_dataset_info()()
 
-if(!info.loaded) return
+if(!info.loaded){
+return
+}
 
-let html=`<p><b>${info.rows}</b> rows</p>`
+let html=""
+
+html+=`<p><b>${info.rows}</b> rows</p>`
 html+=`<p><b>${info.columns}</b> columns</p>`
 html+=`<p>${info.column_names.join(", ")}</p>`
 
@@ -285,16 +288,7 @@ document.getElementById("clusterStats").innerHTML=html
 
 }
 
-async function showGraph(){
-
-const img=await eel.get_cluster_graph()()
-
-document.getElementById("clusterGraph").src="data:image/png;base64,"+img
-
-}
-
 </script>
 
 </body>
-
 </html>
