@@ -1,125 +1,322 @@
-  </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShopWise - Customer Insights</title>
 
-  <script type="text/javascript" src="/eel.js"></script>
+<style>
+:root{
+--bg:#0f172a;
+--card:#1e293b;
+--text:#e2e8f0;
+--accent:#6366f1;
+--accent-dark:#4f46e5;
+--success:#10b981;
+--error:#ef4444;
+}
 
-  <script>
-    const status = document.getElementById('status');
-    const clusterBtn = document.getElementById('clusterBtn');
-    const fileNameDisplay = document.getElementById('fileName');
+body{
+margin:0;
+font-family:'Segoe UI',system-ui,sans-serif;
+background:var(--bg);
+color:var(--text);
+min-height:100vh;
+padding:2rem;
+}
 
-    document.getElementById('file').addEventListener('change', function() {
-      const file = this.files[0];
-      fileNameDisplay.textContent = file ? `Selected: ${file.name}` : 'No file selected';
-    });
+.container{
+max-width:1200px;
+margin:0 auto;
+}
 
-    async function preprocessFile() {
-      const file = document.getElementById('file').files[0];
-      if (!file) return alert('Select a file first');
+h1{
+text-align:center;
+color:var(--accent);
+margin-bottom:2rem;
+}
 
-      status.textContent = 'Preprocessing...';
-      status.className = '';
+.card{
+background:var(--card);
+border-radius:12px;
+padding:2rem;
+margin-bottom:2rem;
+box-shadow:0 10px 25px rgba(0,0,0,0.4);
+}
 
-      const reader = new FileReader();
-      reader.onload = async function(e) {
-        try {
-          const result = await eel.preprocess(e.target.result, file.name)();
-          status.textContent = result;
-          if (result.includes('Success')) {
-            status.className = 'success';
-            clusterBtn.disabled = false;
-            showDatasetInfo();
-          } else {
-            status.className = 'error';
-          }
-        } catch (err) {
-          status.textContent = 'Frontend error: ' + err.message;
-          status.className = 'error';
-          console.error('Preprocess failed:', err);
-        }
-      };
-      reader.readAsText(file);
-    }
+.upload-area{
+text-align:center;
+}
 
-    async function runClustering() {
-      status.textContent = 'Clustering...';
-      status.className = '';
+input[type="file"]{
+display:none;
+}
 
-      try {
-        const result = await eel.cluster()();
-        status.textContent = result;
-        if (result.includes('done')) {
-          status.className = 'success';
-          updateTable();
-        } else {
-          status.className = 'error';
-        }
-      } catch (err) {
-        status.textContent = 'Clustering error: ' + err.message;
-        status.className = 'error';
-      }
-    }
+.upload-btn{
+background:var(--accent);
+color:white;
+padding:1rem 2rem;
+border-radius:8px;
+cursor:pointer;
+display:inline-block;
+font-weight:bold;
+}
 
-    async function updateTable() {
-      try {
-        const data = await eel.get_results()();
-        const tbody = document.querySelector('#resultsTable tbody');
-        tbody.innerHTML = '';
-        data.forEach(row => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${row['Customer ID'] || '-'}</td>
-            <td>${row['Age'] || '-'}</td>
-            <td>${row['Gender'] || '-'}</td>
-            <td>${row['Purchase Amount (USD)'] || '-'}</td>
-            <td>${row['Review Rating'] || '-'}</td>
-            <td>${row['Cluster'] || '-'}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } catch (err) {
-        status.textContent = 'Table error: ' + err.message;
-        status.className = 'error';
-      }
-    }
+button{
+background:var(--accent);
+color:white;
+border:none;
+padding:0.9rem 1.8rem;
+border-radius:8px;
+cursor:pointer;
+font-weight:600;
+margin:0.5rem;
+}
 
-    async function showDatasetInfo() {
-      try {
-        const info = await eel.get_dataset_info()();
-        const div = document.getElementById('datasetInfo');
+button:hover{
+background:var(--accent-dark);
+}
 
-        if (!info.loaded) {
-          div.innerHTML = "No dataset loaded.";
-          return;
-        }
+button:disabled{
+background:#475569;
+cursor:not-allowed;
+}
 
-        let html = `<p><strong>Success!</strong> ${info.rows} rows × ${info.columns} columns</p>`;
-        html += '<p><strong>Columns:</strong> ' + info.column_names.join(', ') + '</p>';
-        html += '<h3>First 5 rows:</h3>';
-        html += '<table><thead><tr>';
+#status{
+margin:1.5rem 0;
+font-size:1.1rem;
+text-align:center;
+min-height:1.5rem;
+}
 
-        if (info.first_5_rows.length > 0) {
-          Object.keys(info.first_5_rows[0]).forEach(key => {
-            html += `<th>${key}</th>`;
-          });
+.success{color:var(--success);}
+.error{color:var(--error);}
 
-          html += '</tr></thead><tbody>';
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:1rem;
+}
 
-          info.first_5_rows.forEach(row => {
-            html += '<tr>';
-            Object.values(row).forEach(val => {
-              html += `<td>${val}</td>`;
-            });
-            html += '</tr>';
-          });
+th,td{
+padding:1rem;
+text-align:left;
+border-bottom:1px solid #334155;
+}
 
-          html += '</tbody></table>';
-        }
+th{
+background:#1e293b;
+color:#94a3b8;
+}
 
-        div.innerHTML = html;
-      } catch (err) {
-        document.getElementById('datasetInfo').innerHTML = 'Info error: ' + err.message;
-      }
-    }
-  </script>
+tr:hover{
+background:#0f172a;
+}
+
+#fileName{
+margin-top:0.75rem;
+color:#94a3b8;
+font-size:0.95rem;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>ShopWise</h1>
+
+<div class="card">
+
+<div class="upload-area">
+<label for="file" class="upload-btn">Choose Dataset</label>
+<input type="file" id="file" accept=".csv,.xlsx">
+<p id="fileName">No file selected</p>
+</div>
+
+<div style="text-align:center;margin-top:1.5rem;">
+<button onclick="preprocessFile()">Preprocess Data</button>
+<button id="clusterBtn" disabled onclick="runClustering()">Run Clustering</button>
+</div>
+
+<div id="status">Ready to start...</div>
+
+</div>
+
+<div class="card">
+<h2>Dataset Summary</h2>
+<div id="datasetInfo">No data loaded yet.</div>
+</div>
+
+<div class="card">
+<h2>Customer Preview</h2>
+
+<table id="resultsTable">
+
+<thead>
+<tr>
+<th>Customer ID</th>
+<th>Age</th>
+<th>Gender</th>
+<th>Purchase Amount</th>
+<th>Review Rating</th>
+<th>Cluster</th>
+</tr>
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<!-- REQUIRED FOR EEL -->
+<script src="/eel.js"></script>
+
+<script>
+
+const status = document.getElementById("status")
+const clusterBtn = document.getElementById("clusterBtn")
+const fileNameDisplay = document.getElementById("fileName")
+
+document.getElementById("file").addEventListener("change",function(){
+
+const file=this.files[0]
+
+fileNameDisplay.textContent=file ? "Selected: "+file.name : "No file selected"
+
+})
+
+async function preprocessFile(){
+
+const file=document.getElementById("file").files[0]
+
+if(!file){
+alert("Select a file first")
+return
+}
+
+status.textContent="Preprocessing..."
+status.className=""
+
+const reader=new FileReader()
+
+reader.onload=async function(e){
+
+try{
+
+const result=await eel.preprocess(e.target.result,file.name)()
+
+status.textContent=result
+
+if(result.includes("Success")){
+
+status.className="success"
+clusterBtn.disabled=false
+showDatasetInfo()
+
+}else{
+
+status.className="error"
+
+}
+
+}catch(err){
+
+status.textContent="Frontend error: "+err.message
+status.className="error"
+
+}
+
+}
+
+reader.readAsText(file)
+
+}
+
+async function runClustering(){
+
+status.textContent="Clustering..."
+status.className=""
+
+try{
+
+const result=await eel.cluster()()
+
+status.textContent=result
+
+if(result.includes("done")){
+
+status.className="success"
+updateTable()
+
+}else{
+
+status.className="error"
+
+}
+
+}catch(err){
+
+status.textContent="Clustering error: "+err.message
+status.className="error"
+
+}
+
+}
+
+async function updateTable(){
+
+const data=await eel.get_results()()
+
+const tbody=document.querySelector("#resultsTable tbody")
+
+tbody.innerHTML=""
+
+data.forEach(row=>{
+
+const tr=document.createElement("tr")
+
+tr.innerHTML=`
+<td>${row["Customer ID"]||"-"}</td>
+<td>${row["Age"]||"-"}</td>
+<td>${row["Gender"]||"-"}</td>
+<td>${row["Purchase Amount (USD)"]||"-"}</td>
+<td>${row["Review Rating"]||"-"}</td>
+<td>${row["Cluster"]||"-"}</td>
+`
+
+tbody.appendChild(tr)
+
+})
+
+}
+
+async function showDatasetInfo(){
+
+const info=await eel.get_dataset_info()()
+
+const div=document.getElementById("datasetInfo")
+
+if(!info.loaded){
+
+div.innerHTML="No dataset loaded."
+return
+
+}
+
+let html=`<p><strong>${info.rows} rows × ${info.columns} columns</strong></p>`
+
+html+="<p><strong>Columns:</strong> "+info.column_names.join(", ")+"</p>"
+
+div.innerHTML=html
+
+}
+
+</script>
+
 </body>
 </html>
