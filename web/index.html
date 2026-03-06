@@ -1,160 +1,140 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ShopWise - Customer Insights</title>
+
+<title>ShopWise Dashboard</title>
 
 <style>
-:root{
---bg:#0f172a;
---card:#1e293b;
---text:#e2e8f0;
---accent:#6366f1;
---accent-dark:#4f46e5;
---success:#10b981;
---error:#ef4444;
-}
 
 body{
-margin:0;
-font-family:'Segoe UI',system-ui,sans-serif;
-background:var(--bg);
-color:var(--text);
-min-height:100vh;
-padding:2rem;
-}
-
-.container{
-max-width:1200px;
-margin:0 auto;
+font-family:Segoe UI;
+background:#0f172a;
+color:#e2e8f0;
+padding:40px;
 }
 
 h1{
 text-align:center;
-color:var(--accent);
-margin-bottom:2rem;
+color:#6366f1;
 }
 
 .card{
-background:var(--card);
-border-radius:12px;
-padding:2rem;
-margin-bottom:2rem;
-box-shadow:0 10px 25px rgba(0,0,0,0.4);
-}
-
-.upload-area{
-text-align:center;
-}
-
-input[type="file"]{
-display:none;
-}
-
-.upload-btn{
-background:var(--accent);
-color:white;
-padding:1rem 2rem;
-border-radius:8px;
-cursor:pointer;
-display:inline-block;
-font-weight:bold;
+background:#1e293b;
+padding:25px;
+border-radius:10px;
+margin-bottom:25px;
 }
 
 button{
-background:var(--accent);
-color:white;
+padding:10px 18px;
+background:#6366f1;
 border:none;
-padding:0.9rem 1.8rem;
-border-radius:8px;
+border-radius:6px;
+color:white;
 cursor:pointer;
-font-weight:600;
-margin:0.5rem;
+margin:5px;
 }
 
 button:hover{
-background:var(--accent-dark);
+background:#4f46e5;
 }
 
-button:disabled{
-background:#475569;
-cursor:not-allowed;
+select{
+padding:10px;
+border-radius:6px;
+border:none;
+background:#6366f1;
+color:white;
+margin-left:10px;
+cursor:pointer;
 }
 
-#status{
-margin:1.5rem 0;
-font-size:1.1rem;
-text-align:center;
-min-height:1.5rem;
+input[type=file]{
+padding:10px;
+background:#6366f1;
+border-radius:6px;
+color:white;
 }
-
-.success{color:var(--success);}
-.error{color:var(--error);}
 
 table{
 width:100%;
 border-collapse:collapse;
-margin-top:1rem;
+margin-top:15px;
 }
 
 th,td{
-padding:1rem;
-text-align:left;
+padding:10px;
 border-bottom:1px solid #334155;
 }
 
 th{
-background:#1e293b;
 color:#94a3b8;
 }
 
-tr:hover{
-background:#0f172a;
+img{
+margin-top:20px;
+max-width:500px;
 }
 
-#fileName{
-margin-top:0.75rem;
-color:#94a3b8;
-font-size:0.95rem;
-}
 </style>
+
 </head>
 
 <body>
 
-<div class="container">
-
-<h1>ShopWise</h1>
+<h1>ShopWise Customer Clustering</h1>
 
 <div class="card">
 
-<div class="upload-area">
-<label for="file" class="upload-btn">Choose Dataset</label>
-<input type="file" id="file" accept=".csv,.xlsx">
-<p id="fileName">No file selected</p>
-</div>
+<input type="file" id="file">
 
-<div style="text-align:center;margin-top:1.5rem;">
 <button onclick="preprocessFile()">Preprocess Data</button>
+
 <button id="clusterBtn" disabled onclick="runClustering()">Run Clustering</button>
-</div>
 
-<div id="status">Ready to start...</div>
+<p id="status">Ready</p>
 
 </div>
 
 <div class="card">
+
 <h2>Dataset Summary</h2>
-<div id="datasetInfo">No data loaded yet.</div>
+
+<div id="datasetInfo"></div>
+
 </div>
 
 <div class="card">
+
+<h2>Cluster Distribution</h2>
+
+<div id="clusterStats"></div>
+
+<img id="clusterGraph">
+
+</div>
+
+<div class="card">
+
 <h2>Customer Preview</h2>
+
+<label>Sort By:</label>
+
+<select id="sortSelect" onchange="sortTable()">
+
+<option value="Customer ID">Customer ID</option>
+<option value="Cluster">Cluster</option>
+<option value="Age">Age</option>
+<option value="Review Rating">Review Rating</option>
+<option value="Purchase Amount (USD)">Purchase Amount</option>
+
+</select>
 
 <table id="resultsTable">
 
 <thead>
+
 <tr>
 <th>Customer ID</th>
 <th>Age</th>
@@ -163,6 +143,7 @@ font-size:0.95rem;
 <th>Review Rating</th>
 <th>Cluster</th>
 </tr>
+
 </thead>
 
 <tbody></tbody>
@@ -171,65 +152,26 @@ font-size:0.95rem;
 
 </div>
 
-</div>
-
-<!-- REQUIRED FOR EEL -->
 <script src="/eel.js"></script>
 
 <script>
 
-const status = document.getElementById("status")
-const clusterBtn = document.getElementById("clusterBtn")
-const fileNameDisplay = document.getElementById("fileName")
-
-document.getElementById("file").addEventListener("change",function(){
-
-const file=this.files[0]
-
-fileNameDisplay.textContent=file ? "Selected: "+file.name : "No file selected"
-
-})
+const status=document.getElementById("status")
+const clusterBtn=document.getElementById("clusterBtn")
 
 async function preprocessFile(){
 
 const file=document.getElementById("file").files[0]
 
-if(!file){
-alert("Select a file first")
-return
-}
-
-status.textContent="Preprocessing..."
-status.className=""
-
 const reader=new FileReader()
 
 reader.onload=async function(e){
 
-try{
-
 const result=await eel.preprocess(e.target.result,file.name)()
 
-status.textContent=result
+status.innerText=result
 
-if(result.includes("Success")){
-
-status.className="success"
-clusterBtn.disabled=false
 showDatasetInfo()
-
-}else{
-
-status.className="error"
-
-}
-
-}catch(err){
-
-status.textContent="Frontend error: "+err.message
-status.className="error"
-
-}
 
 }
 
@@ -239,32 +181,17 @@ reader.readAsText(file)
 
 async function runClustering(){
 
-status.textContent="Clustering..."
-status.className=""
-
-try{
-
 const result=await eel.cluster()()
 
-status.textContent=result
+status.innerText=result
 
-if(result.includes("done")){
+clusterBtn.disabled=false
 
-status.className="success"
 updateTable()
 
-}else{
+showClusterStats()
 
-status.className="error"
-
-}
-
-}catch(err){
-
-status.textContent="Clustering error: "+err.message
-status.className="error"
-
-}
+showGraph()
 
 }
 
@@ -281,12 +208,45 @@ data.forEach(row=>{
 const tr=document.createElement("tr")
 
 tr.innerHTML=`
-<td>${row["Customer ID"]||"-"}</td>
-<td>${row["Age"]||"-"}</td>
-<td>${row["Gender"]||"-"}</td>
-<td>${row["Purchase Amount (USD)"]||"-"}</td>
-<td>${row["Review Rating"]||"-"}</td>
-<td>${row["Cluster"]||"-"}</td>
+
+<td>${row["Customer ID"]}</td>
+<td>${row["Age"]}</td>
+<td>${row["Gender"]}</td>
+<td>${row["Purchase Amount (USD)"]}</td>
+<td>${row["Review Rating"]}</td>
+<td>${row["Cluster"]}</td>
+
+`
+
+tbody.appendChild(tr)
+
+})
+
+}
+
+async function sortTable(){
+
+const column=document.getElementById("sortSelect").value
+
+const data=await eel.get_sorted_results(column)()
+
+const tbody=document.querySelector("#resultsTable tbody")
+
+tbody.innerHTML=""
+
+data.forEach(row=>{
+
+const tr=document.createElement("tr")
+
+tr.innerHTML=`
+
+<td>${row["Customer ID"]}</td>
+<td>${row["Age"]}</td>
+<td>${row["Gender"]}</td>
+<td>${row["Purchase Amount (USD)"]}</td>
+<td>${row["Review Rating"]}</td>
+<td>${row["Cluster"]}</td>
+
 `
 
 tbody.appendChild(tr)
@@ -299,24 +259,42 @@ async function showDatasetInfo(){
 
 const info=await eel.get_dataset_info()()
 
-const div=document.getElementById("datasetInfo")
+if(!info.loaded) return
 
-if(!info.loaded){
+let html=`<p><b>${info.rows}</b> rows</p>`
+html+=`<p><b>${info.columns}</b> columns</p>`
+html+=`<p>${info.column_names.join(", ")}</p>`
 
-div.innerHTML="No dataset loaded."
-return
+document.getElementById("datasetInfo").innerHTML=html
 
 }
 
-let html=`<p><strong>${info.rows} rows × ${info.columns} columns</strong></p>`
+async function showClusterStats(){
 
-html+="<p><strong>Columns:</strong> "+info.column_names.join(", ")+"</p>"
+const stats=await eel.get_cluster_stats()()
 
-div.innerHTML=html
+let html=""
+
+for(const cluster in stats){
+
+html+=`<p>Cluster ${cluster}: ${stats[cluster]} customers</p>`
+
+}
+
+document.getElementById("clusterStats").innerHTML=html
+
+}
+
+async function showGraph(){
+
+const img=await eel.get_cluster_graph()()
+
+document.getElementById("clusterGraph").src="data:image/png;base64,"+img
 
 }
 
 </script>
 
 </body>
+
 </html>
