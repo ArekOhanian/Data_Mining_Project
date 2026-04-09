@@ -8,33 +8,79 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <style>
+        /* ── Light-mode base ── */
         body {
             background-color: #F8F1E9;
             font-family: 'Segoe UI', system-ui, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
         }
-        .nav-link {
-            transition: all 0.3s ease;
+
+        /* ── Dark-mode overrides ── */
+        body.dark {
+            background-color: #0F172A;
+            color: #E2E8F0;
         }
+        body.dark .sidebar        { background-color: #1E293B; border-color: #334155; }
+        body.dark .topbar         { background-color: #1E293B; border-color: #334155; }
+        body.dark .card-bg        { background-color: #1E293B; }
+        body.dark .card-bg:hover  { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.4); }
+        body.dark .table-bg       { background-color: #1E293B; }
+        body.dark table thead     { background-color: #0F172A; }
+        body.dark table tbody tr:hover { background-color: #0F172A; }
+        body.dark .text-slate-500 { color: #94A3B8; }
+        body.dark .text-slate-600 { color: #CBD5E1; }
+        body.dark .text-slate-700 { color: #E2E8F0; }
+        body.dark .text-slate-800 { color: #F1F5F9; }
+        body.dark .border-slate-200 { border-color: #334155; }
+        body.dark .border-slate-100 { border-color: #334155; }
+        body.dark .bg-slate-50    { background-color: #0F172A; }
+        body.dark .bg-slate-100   { background-color: #334155; }
+        body.dark select          { background-color: #1E293B; color: #E2E8F0; border-color: #475569; }
+        body.dark .border-slate-300 { border-color: #475569; }
+        body.dark .bg-white       { background-color: #1E293B; }
+        body.dark .divide-y > * + * { border-color: #334155; }
+        body.dark .toast-panel    { background-color: #1E293B; border-color: #334155; }
+        body.dark .nav-link:hover { background-color: #3B82F6; }
+
+        /* ── Shared transitions & effects ── */
+        .nav-link { transition: all 0.3s ease; }
         .nav-link:hover {
             background-color: #1E3A8A;
             color: white;
             transform: translateX(8px);
         }
-        .card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        .nav-link.active-nav {
+            background-color: #EFF6FF;
+            color: #1E3A8A;
+            font-weight: 600;
         }
+        body.dark .nav-link.active-nav {
+            background-color: #1E3A8A;
+            color: #fff;
+        }
+        .card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .card:hover {
             transform: translateY(-4px);
             box-shadow: 0 20px 25px -5px rgb(30 58 138 / 0.1), 0 8px 10px -6px rgb(30 58 138 / 0.1);
         }
         .accent-blue { color: #1E3A8A; }
-        .toast {
-            animation: slideIn 0.4s ease forwards;
-        }
+        body.dark .accent-blue { color: #93C5FD; }
+
+        .toast { animation: slideIn 0.4s ease forwards; }
         @keyframes slideIn {
             from { transform: translateX(120%); }
-            to { transform: translateX(0); }
+            to   { transform: translateX(0); }
         }
+
+        /* cluster badge colours */
+        .cluster-badge-0 { background:#DBEAFE; color:#1E40AF; }
+        .cluster-badge-1 { background:#D1FAE5; color:#065F46; }
+        .cluster-badge-2 { background:#FEF3C7; color:#92400E; }
+        .cluster-badge-3 { background:#FCE7F3; color:#9D174D; }
+        .cluster-badge-4 { background:#EDE9FE; color:#5B21B6; }
+        .cluster-badge-5 { background:#FFEDD5; color:#9A3412; }
+        .cluster-badge-6 { background:#F0FDF4; color:#14532D; }
+        .cluster-badge-7 { background:#FFF1F2; color:#881337; }
     </style>
 </head>
 <body class="min-h-screen text-slate-800">
@@ -42,7 +88,7 @@
 <div class="flex h-screen">
 
     <!-- Sidebar -->
-    <div class="w-72 bg-white border-r border-slate-200 flex flex-col">
+    <div class="sidebar w-72 bg-white border-r border-slate-200 flex flex-col">
         <div class="p-8 border-b border-slate-100">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-[#1E3A8A] rounded-2xl flex items-center justify-center text-white text-2xl font-bold">S</div>
@@ -54,28 +100,28 @@
         </div>
 
         <nav class="flex-1 p-6 space-y-2">
-            <a href="#" onclick="showPage('dashboard')" class="nav-link flex items-center gap-3 px-6 py-4 rounded-2xl text-slate-700 font-medium active">
-                <i class="fas fa-home w-5"></i>
-                <span>Dashboard</span>
+            <a href="#" onclick="showPage('dashboard')" id="nav-dashboard"
+               class="nav-link active-nav flex items-center gap-3 px-6 py-4 rounded-2xl text-slate-700 font-medium">
+                <i class="fas fa-home w-5"></i><span>Dashboard</span>
             </a>
-            <a href="#" onclick="showPage('results')" class="nav-link flex items-center gap-3 px-6 py-4 rounded-2xl text-slate-700 font-medium">
-                <i class="fas fa-users w-5"></i>
-                <span>Customer Results</span>
+            <a href="#" onclick="showPage('results')" id="nav-results"
+               class="nav-link flex items-center gap-3 px-6 py-4 rounded-2xl text-slate-700 font-medium">
+                <i class="fas fa-users w-5"></i><span>Customer Results</span>
             </a>
-            <a href="#" onclick="showPage('clusters')" class="nav-link flex items-center gap-3 px-6 py-4 rounded-2xl text-slate-700 font-medium">
-                <i class="fas fa-chart-pie w-5"></i>
-                <span>Cluster Analysis</span>
+            <a href="#" onclick="showPage('clusters')" id="nav-clusters"
+               class="nav-link flex items-center gap-3 px-6 py-4 rounded-2xl text-slate-700 font-medium">
+                <i class="fas fa-chart-pie w-5"></i><span>Cluster Analysis</span>
             </a>
-            <a href="#" onclick="showPage('insights')" class="nav-link flex items-center gap-3 px-6 py-4 rounded-2xl text-slate-700 font-medium">
-                <i class="fas fa-lightbulb w-5"></i>
-                <span>Marketing Insights</span>
+            <a href="#" onclick="showPage('insights')" id="nav-insights"
+               class="nav-link flex items-center gap-3 px-6 py-4 rounded-2xl text-slate-700 font-medium">
+                <i class="fas fa-lightbulb w-5"></i><span>Marketing Insights</span>
             </a>
         </nav>
 
         <div class="p-6 border-t border-slate-100">
-            <button onclick="toggleDarkMode()" 
-                    class="w-full flex items-center justify-center gap-2 py-3 px-4 bg-slate-100 hover:bg-slate-200 rounded-2xl text-sm font-medium">
-                <i class="fas fa-moon"></i>
+            <button onclick="toggleDarkMode()"
+                    class="w-full flex items-center justify-center gap-2 py-3 px-4 bg-slate-100 hover:bg-slate-200 rounded-2xl text-sm font-medium transition">
+                <i id="themeIcon" class="fas fa-moon"></i>
                 <span id="themeText">Dark Mode</span>
             </button>
         </div>
@@ -85,35 +131,31 @@
     <div class="flex-1 overflow-auto">
 
         <!-- Top Bar -->
-        <div class="bg-white border-b border-slate-200 px-10 py-5 flex items-center justify-between sticky top-0 z-10">
+        <div class="topbar bg-white border-b border-slate-200 px-10 py-5 flex items-center justify-between sticky top-0 z-10">
             <h2 id="pageTitle" class="text-3xl font-semibold accent-blue">Dashboard</h2>
-            
             <div class="flex items-center gap-6">
                 <div id="status" class="text-sm font-medium text-emerald-600">Ready to analyze your customers</div>
-                
                 <div class="flex items-center gap-4">
                     <input type="file" id="fileInput" accept=".csv" class="hidden">
-                    <button onclick="document.getElementById('fileInput').click()" 
+                    <button onclick="document.getElementById('fileInput').click()"
                             class="flex items-center gap-2 bg-[#1E3A8A] hover:bg-blue-900 text-white px-6 py-3 rounded-2xl font-medium transition">
-                        <i class="fas fa-upload"></i>
-                        <span>Upload Dataset</span>
+                        <i class="fas fa-upload"></i><span>Upload Dataset</span>
                     </button>
-                    
                     <button id="clusterBtn" onclick="runClustering()" disabled
-                            class="flex items-center gap-2 bg-white border border-slate-300 hover:border-slate-400 px-6 py-3 rounded-2xl font-medium transition">
-                        <i class="fas fa-brain"></i>
-                        <span>Run Clustering</span>
+                            class="flex items-center gap-2 bg-white border border-slate-300 hover:border-slate-400 px-6 py-3 rounded-2xl font-medium transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fas fa-brain"></i><span>Run Clustering</span>
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Pages -->
-
-        <!-- Dashboard Page -->
+        <!-- ══════════════════════════════════════════════
+             DASHBOARD PAGE
+        ══════════════════════════════════════════════ -->
         <div id="dashboardPage" class="p-10">
+            <!-- Stat Cards -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                <div class="card bg-white rounded-3xl p-8 shadow-sm">
+                <div class="card card-bg bg-white rounded-3xl p-8 shadow-sm">
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="text-slate-500 text-sm">Total Customers</p>
@@ -122,7 +164,7 @@
                         <i class="fas fa-users text-4xl text-blue-200"></i>
                     </div>
                 </div>
-                <div class="card bg-white rounded-3xl p-8 shadow-sm">
+                <div class="card card-bg bg-white rounded-3xl p-8 shadow-sm">
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="text-slate-500 text-sm">Clusters Found</p>
@@ -131,7 +173,7 @@
                         <i class="fas fa-layer-group text-4xl text-blue-200"></i>
                     </div>
                 </div>
-                <div class="card bg-white rounded-3xl p-8 shadow-sm">
+                <div class="card card-bg bg-white rounded-3xl p-8 shadow-sm">
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="text-slate-500 text-sm">Avg. Review Rating</p>
@@ -142,14 +184,15 @@
                 </div>
             </div>
 
+            <!-- Charts -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="card bg-white rounded-3xl p-8 shadow-sm">
+                <div class="card card-bg bg-white rounded-3xl p-8 shadow-sm">
                     <h3 class="font-semibold mb-6 flex items-center gap-2">
                         <i class="fas fa-chart-bar"></i> Cluster Distribution
                     </h3>
                     <canvas id="clusterBarChart" height="120"></canvas>
                 </div>
-                <div class="card bg-white rounded-3xl p-8 shadow-sm">
+                <div class="card card-bg bg-white rounded-3xl p-8 shadow-sm">
                     <h3 class="font-semibold mb-6 flex items-center gap-2">
                         <i class="fas fa-chart-pie"></i> Segment Breakdown
                     </h3>
@@ -158,12 +201,14 @@
             </div>
         </div>
 
-        <!-- Results Page -->
+        <!-- ══════════════════════════════════════════════
+             CUSTOMER RESULTS PAGE
+        ══════════════════════════════════════════════ -->
         <div id="resultsPage" class="p-10 hidden">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-2xl font-semibold">Customer Results</h3>
                 <div class="flex gap-3">
-                    <select id="sortSelect" onchange="sortTable()" 
+                    <select id="sortSelect" onchange="sortTable()"
                             class="bg-white border border-slate-300 rounded-2xl px-5 py-3 focus:outline-none focus:border-blue-500">
                         <option value="Customer ID">Sort by Customer ID</option>
                         <option value="Cluster">Sort by Cluster</option>
@@ -171,15 +216,14 @@
                         <option value="Purchase Amount (USD)">Sort by Purchase Amount</option>
                         <option value="Review Rating">Sort by Review Rating</option>
                     </select>
-                    <button onclick="downloadResults()" 
-                            class="flex items-center gap-2 bg-white border border-slate-300 hover:border-slate-400 px-6 py-3 rounded-2xl">
-                        <i class="fas fa-download"></i>
-                        <span>Download CSV</span>
+                    <button onclick="downloadResults()"
+                            class="flex items-center gap-2 bg-white border border-slate-300 hover:border-slate-400 px-6 py-3 rounded-2xl transition">
+                        <i class="fas fa-download"></i><span>Download CSV</span>
                     </button>
                 </div>
             </div>
 
-            <div class="bg-white rounded-3xl shadow-sm overflow-hidden">
+            <div class="table-bg bg-white rounded-3xl shadow-sm overflow-hidden">
                 <table id="resultsTable" class="w-full">
                     <thead class="bg-slate-50">
                         <tr>
@@ -196,19 +240,43 @@
             </div>
         </div>
 
-        <!-- Cluster Analysis Page -->
+        <!-- ══════════════════════════════════════════════
+             CLUSTER ANALYSIS PAGE
+        ══════════════════════════════════════════════ -->
         <div id="clustersPage" class="p-10 hidden">
-            <h3 class="text-2xl font-semibold mb-8">Customer Segments</h3>
-            <div id="personaCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <!-- Populated by JavaScript -->
+            <h3 class="text-2xl font-semibold mb-2">Customer Segments</h3>
+            <p class="text-slate-500 text-sm mb-8">Each cluster represents a distinct group of customers identified by the algorithm.</p>
+
+            <!-- Persona Cards -->
+            <div id="personaCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
+                <!-- Populated by JS after clustering -->
+            </div>
+
+            <!-- Additional segment charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="card card-bg bg-white rounded-3xl p-8 shadow-sm">
+                    <h3 class="font-semibold mb-6 flex items-center gap-2">
+                        <i class="fas fa-dollar-sign"></i> Avg Spend per Cluster
+                    </h3>
+                    <canvas id="spendChart" height="120"></canvas>
+                </div>
+                <div class="card card-bg bg-white rounded-3xl p-8 shadow-sm">
+                    <h3 class="font-semibold mb-6 flex items-center gap-2">
+                        <i class="fas fa-star"></i> Avg Rating per Cluster
+                    </h3>
+                    <canvas id="ratingChart" height="120"></canvas>
+                </div>
             </div>
         </div>
 
-        <!-- Insights Page -->
+        <!-- ══════════════════════════════════════════════
+             MARKETING INSIGHTS PAGE
+        ══════════════════════════════════════════════ -->
         <div id="insightsPage" class="p-10 hidden">
-            <h3 class="text-2xl font-semibold mb-8">Marketing Insights & Recommendations</h3>
-            <div id="insightsContent" class="space-y-8">
-                <!-- Filled dynamically after clustering -->
+            <h3 class="text-2xl font-semibold mb-2">Marketing Insights & Recommendations</h3>
+            <p class="text-slate-500 text-sm mb-8">Actionable strategies derived from your customer clustering results.</p>
+            <div id="insightsContent" class="space-y-6">
+                <!-- Populated after clustering -->
             </div>
         </div>
 
@@ -216,181 +284,146 @@
 </div>
 
 <!-- Toast -->
-<div id="toast" class="hidden fixed bottom-6 right-6 bg-white border border-emerald-200 text-emerald-700 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
-    <i class="fas fa-check-circle"></i>
+<div id="toast"
+     class="toast-panel hidden fixed bottom-6 right-6 bg-white border border-emerald-200 text-emerald-700 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 z-50">
+    <i id="toastIcon" class="fas fa-check-circle"></i>
     <span id="toastText"></span>
 </div>
 
 <script src="/eel.js"></script>
 <script>
-// Tailwind script already loaded via CDN
 
-let currentPage = 'dashboard';
-let clusterChartBar = null;
-let clusterChartPie = null;
+// ─────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────
+let currentPage    = 'dashboard';
+let clusterChartBar  = null;
+let clusterChartPie  = null;
+let spendChartObj    = null;
+let ratingChartObj   = null;
+let cachedResults    = [];   // holds last-loaded table rows
+let isDark           = false;
 
+const PALETTE = ['#1E3A8A','#3B82F6','#60A5FA','#93C5FD','#BFDBFE','#F59E0B','#10B981','#EF4444'];
+
+// ─────────────────────────────────────────
+// TOAST
+// ─────────────────────────────────────────
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
-    const text = document.getElementById('toastText');
+    const text  = document.getElementById('toastText');
+    const icon  = document.getElementById('toastIcon');
+
     text.textContent = message;
-    toast.classList.remove('hidden');
+    toast.classList.remove('hidden', 'toast',
+        'border-emerald-200','text-emerald-700',
+        'border-red-200','text-red-700',
+        'border-blue-200','text-blue-700');
+
+    if (type === 'error') {
+        toast.classList.add('border-red-200','text-red-700');
+        icon.className = 'fas fa-exclamation-circle';
+    } else if (type === 'info') {
+        toast.classList.add('border-blue-200','text-blue-700');
+        icon.className = 'fas fa-info-circle';
+    } else {
+        toast.classList.add('border-emerald-200','text-emerald-700');
+        icon.className = 'fas fa-check-circle';
+    }
+
+    toast.classList.add('toast');
     setTimeout(() => toast.classList.add('hidden'), 4000);
 }
 
+// ─────────────────────────────────────────
+// PAGE NAVIGATION
+// ─────────────────────────────────────────
 function showPage(page) {
     document.querySelectorAll('[id$="Page"]').forEach(p => p.classList.add('hidden'));
     document.getElementById(page + 'Page').classList.remove('hidden');
-    document.getElementById('pageTitle').textContent = {
-        'dashboard': 'Dashboard',
-        'results': 'Customer Results',
-        'clusters': 'Cluster Analysis',
-        'insights': 'Marketing Insights'
-    }[page];
+
+    const titles = { dashboard:'Dashboard', results:'Customer Results', clusters:'Cluster Analysis', insights:'Marketing Insights' };
+    document.getElementById('pageTitle').textContent = titles[page] || page;
+
+    // Active nav highlight
+    document.querySelectorAll('.nav-link').forEach(a => a.classList.remove('active-nav'));
+    const navEl = document.getElementById('nav-' + page);
+    if (navEl) navEl.classList.add('active-nav');
+
     currentPage = page;
+    return false;
 }
+
+// ─────────────────────────────────────────
+// DARK MODE
+// ─────────────────────────────────────────
+function toggleDarkMode() {
+    isDark = !isDark;
+    document.body.classList.toggle('dark', isDark);
+    document.getElementById('themeIcon').className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+    document.getElementById('themeText').textContent = isDark ? 'Light Mode' : 'Dark Mode';
+}
+
+// ─────────────────────────────────────────
+// FILE UPLOAD & PREPROCESS
+// ─────────────────────────────────────────
+document.getElementById('fileInput').addEventListener('change', preprocessFile);
 
 async function preprocessFile() {
     const file = document.getElementById('fileInput').files[0];
-    if (!file) {
-        showToast("Please select a CSV file first", "error");
-        return;
-    }
+    if (!file) { showToast("Please select a CSV file first", "error"); return; }
 
-    document.getElementById('status').innerHTML = `<i class="fas fa-spinner fa-spin"></i> Preprocessing...`;
-    
+    setStatus(`<i class="fas fa-spinner fa-spin"></i> Preprocessing…`);
+
     const reader = new FileReader();
     reader.onload = async function(e) {
         const result = await eel.preprocess(e.target.result, file.name)();
-        document.getElementById('status').textContent = result;
-        
+        setStatus(result);
         if (result.includes("Success")) {
             document.getElementById('clusterBtn').disabled = false;
             showToast("Data preprocessed successfully!");
-            showDatasetInfo();
+            await showDatasetInfo();
+        } else {
+            showToast(result, "error");
         }
     };
     reader.readAsText(file);
 }
 
+function setStatus(html) {
+    document.getElementById('status').innerHTML = html;
+}
+
+// ─────────────────────────────────────────
+// RUN CLUSTERING
+// ─────────────────────────────────────────
 async function runClustering() {
-    document.getElementById('status').innerHTML = `<i class="fas fa-spinner fa-spin"></i> Running clustering...`;
-    
+    setStatus(`<i class="fas fa-spinner fa-spin"></i> Running clustering…`);
     const result = await eel.cluster()();
-    document.getElementById('status').textContent = result;
-    
+    setStatus(result);
     if (!result.includes("Error")) {
         showToast("Clustering completed successfully!");
-        updateAllViews();
+        await updateAllViews();
+    } else {
+        showToast(result, "error");
     }
 }
 
+// ─────────────────────────────────────────
+// UPDATE ALL VIEWS
+// ─────────────────────────────────────────
 async function updateAllViews() {
+    await showDatasetInfo();
+    await updateDashboardCards();
     await updateTable();
-    await showClusterStats();
     await showClusterCharts();
     await showPersonaCards();
     await showInsights();
 }
 
-async function updateTable() {
-    const data = await eel.get_results()();
-    const tbody = document.querySelector("#resultsTable tbody");
-    tbody.innerHTML = "";
-
-    data.forEach(row => {
-        const tr = document.createElement("tr");
-        tr.className = "hover:bg-slate-50 transition";
-        tr.innerHTML = `
-            <td class="py-5 px-8">${row["Customer ID"]}</td>
-            <td class="py-5 px-8">${row["Age"]}</td>
-            <td class="py-5 px-8">${row["Gender"]}</td>
-            <td class="py-5 px-8 font-medium">$${row["Purchase Amount (USD)"]}</td>
-            <td class="py-5 px-8">${row["Review Rating"]}</td>
-            <td class="py-5 px-8">
-                <span class="px-4 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
-                    Cluster ${row["Cluster"]}
-                </span>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-
-async function sortTable() {
-    const column = document.getElementById("sortSelect").value;
-    const data = await eel.get_sorted_results(column)();
-    // Reuse updateTable logic or directly populate
-    const tbody = document.querySelector("#resultsTable tbody");
-    tbody.innerHTML = "";
-    data.forEach(row => { /* same as above */ });
-}
-
-async function showClusterStats() {
-    const stats = await eel.get_cluster_stats()();
-    // Update cards if you want
-}
-
-async function showClusterCharts() {
-    const stats = await eel.get_cluster_stats()();
-    const labels = Object.keys(stats).map(k => `Cluster ${k}`);
-    const values = Object.values(stats);
-
-    // Bar Chart
-    if (clusterChartBar) clusterChartBar.destroy();
-    clusterChartBar = new Chart(document.getElementById('clusterBarChart'), {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Number of Customers',
-                data: values,
-                backgroundColor: '#1E3A8A',
-                borderRadius: 8
-            }]
-        },
-        options: { responsive: true, plugins: { legend: { display: false } } }
-    });
-
-    // Pie Chart
-    if (clusterChartPie) clusterChartPie.destroy();
-    clusterChartPie = new Chart(document.getElementById('clusterPieChart'), {
-        type: 'doughnut',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: values,
-                backgroundColor: ['#1E3A8A', '#3B82F6', '#60A5FA', '#93C5FD']
-            }]
-        },
-        options: { responsive: true }
-    });
-}
-
-async function showPersonaCards() {
-    // You can enhance this by calling more eel functions or hardcoding smart personas for now
-    const container = document.getElementById('personaCards');
-    container.innerHTML = `
-        <div class="card bg-white rounded-3xl p-8">
-            <h4 class="font-semibold text-lg mb-4">High-Value Loyalists</h4>
-            <p class="text-slate-600">Frequent high spenders with excellent ratings. Focus on premium loyalty programs.</p>
-        </div>
-        <!-- Add 3 more similar cards with different personas -->
-    `;
-}
-
-async function showInsights() {
-    document.getElementById('insightsContent').innerHTML = `
-        <div class="bg-white rounded-3xl p-10">
-            <h4 class="font-semibold text-xl mb-6">Recommended Actions</h4>
-            <ul class="space-y-6 text-slate-600">
-                <li class="flex gap-4"><span class="text-emerald-500">→</span> Target Cluster 0 with exclusive discount codes – they respond well to promotions.</li>
-                <li class="flex gap-4"><span class="text-emerald-500">→</span> Send personalized thank-you emails to Cluster 2 – highest review ratings.</li>
-                <!-- More insights -->
-            </ul>
-        </div>
-    `;
-}
-
+// ─────────────────────────────────────────
+// DASHBOARD CARDS
+// ─────────────────────────────────────────
 async function showDatasetInfo() {
     const info = await eel.get_dataset_info()();
     if (info.loaded) {
@@ -398,25 +431,311 @@ async function showDatasetInfo() {
     }
 }
 
-function downloadResults() {
-    showToast("Downloading results as CSV...");
-    // You can extend eel to add a download function if needed
+async function updateDashboardCards() {
+    // Cluster count
+    const count = await eel.get_cluster_count()();
+    document.getElementById('clusterCount').textContent = count || '—';
+
+    // Avg rating
+    const rating = await eel.get_avg_rating()();
+    document.getElementById('avgRating').textContent = rating ? rating.toFixed(1) : '—';
 }
 
-// File input listener
-document.getElementById('fileInput').addEventListener('change', preprocessFile);
+// ─────────────────────────────────────────
+// TABLE – shared row renderer
+// ─────────────────────────────────────────
+function renderRows(data) {
+    const tbody = document.querySelector("#resultsTable tbody");
+    tbody.innerHTML = "";
+    if (!data || data.length === 0) return;
 
-// Initialize
+    data.forEach(row => {
+        const cl = row["Cluster"] ?? '';
+        const badgeClass = `cluster-badge-${cl % 8}`;
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50 transition";
+        tr.innerHTML = `
+            <td class="py-5 px-8">${row["Customer ID"] ?? ''}</td>
+            <td class="py-5 px-8">${row["Age"] ?? ''}</td>
+            <td class="py-5 px-8">${row["Gender"] ?? ''}</td>
+            <td class="py-5 px-8 font-medium">$${(+row["Purchase Amount (USD)"]).toFixed(2)}</td>
+            <td class="py-5 px-8">${row["Review Rating"] ?? ''}</td>
+            <td class="py-5 px-8">
+                <span class="px-4 py-1 text-xs font-semibold rounded-full ${badgeClass}">
+                    Cluster ${cl}
+                </span>
+            </td>`;
+        tbody.appendChild(tr);
+    });
+
+    cachedResults = data;
+}
+
+async function updateTable() {
+    const data = await eel.get_results()();
+    renderRows(data);
+}
+
+async function sortTable() {
+    const column = document.getElementById("sortSelect").value;
+    const data   = await eel.get_sorted_results(column)();
+    renderRows(data);
+}
+
+// ─────────────────────────────────────────
+// DASHBOARD CHARTS
+// ─────────────────────────────────────────
+async function showClusterCharts() {
+    const stats  = await eel.get_cluster_stats()();
+    const labels = Object.keys(stats).map(k => `Cluster ${k}`);
+    const values = Object.values(stats);
+
+    if (clusterChartBar) clusterChartBar.destroy();
+    clusterChartBar = new Chart(document.getElementById('clusterBarChart'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{ label:'Customers', data: values, backgroundColor: PALETTE, borderRadius: 8 }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    if (clusterChartPie) clusterChartPie.destroy();
+    clusterChartPie = new Chart(document.getElementById('clusterPieChart'), {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{ data: values, backgroundColor: PALETTE }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+}
+
+// ─────────────────────────────────────────
+// CLUSTER ANALYSIS — PERSONA CARDS + SEGMENT CHARTS
+// ─────────────────────────────────────────
+
+const personaNames = [
+    "High-Value Loyalists",
+    "Bargain Hunters",
+    "Casual Browsers",
+    "Rising Stars",
+    "Premium Explorers",
+    "Deal Seekers",
+    "Engaged Reviewers",
+    "Occasional Shoppers"
+];
+
+const personaDescriptions = [
+    "Frequent, high-spending customers with excellent ratings. Prioritise VIP loyalty programmes and early access perks.",
+    "Price-sensitive shoppers who respond well to flash sales, coupons, and bundle deals.",
+    "Low-frequency visitors who need re-engagement via email campaigns and personalised recommendations.",
+    "Younger or newer customers with growing spend. Nurture with welcome offers and onboarding incentives.",
+    "High earners exploring premium categories. Target with curated collections and concierge support.",
+    "Deal-motivated buyers who buy in bursts. Use limited-time offers and stock-urgency messaging.",
+    "Customers who leave detailed reviews. Leverage as brand ambassadors and referral programme recruits.",
+    "Infrequent purchasers with moderate spend. Activate with seasonal campaigns and win-back emails."
+];
+
+const personaIcons = ['🏆','🏷️','🛒','🚀','💎','🎯','⭐','🌙'];
+
+async function showPersonaCards() {
+    const profiles = await eel.get_cluster_profiles()();
+    const container = document.getElementById('personaCards');
+    container.innerHTML = '';
+
+    const spendLabels  = [];
+    const spendValues  = [];
+    const ratingLabels = [];
+    const ratingValues = [];
+
+    profiles.forEach(p => {
+        const idx   = p.cluster % 8;
+        const name  = personaNames[idx];
+        const desc  = personaDescriptions[idx];
+        const icon  = personaIcons[idx];
+        const label = `Cluster ${p.cluster}`;
+
+        spendLabels.push(label);
+        spendValues.push(p.avg_spend ?? 0);
+        ratingLabels.push(label);
+        ratingValues.push(p.avg_rating ?? 0);
+
+        const card = document.createElement('div');
+        card.className = 'card card-bg bg-white rounded-3xl p-8 shadow-sm flex flex-col gap-4';
+        card.innerHTML = `
+            <div class="flex items-center gap-3">
+                <span class="text-4xl">${icon}</span>
+                <div>
+                    <span class="text-xs font-semibold px-3 py-1 rounded-full cluster-badge-${idx}">${label}</span>
+                    <h4 class="font-semibold text-lg mt-1">${name}</h4>
+                </div>
+            </div>
+            <p class="text-slate-600 text-sm">${desc}</p>
+            <div class="grid grid-cols-2 gap-3 mt-auto">
+                <div class="bg-slate-50 rounded-2xl p-4 text-center">
+                    <p class="text-xs text-slate-500">Customers</p>
+                    <p class="text-2xl font-semibold">${p.count.toLocaleString()}</p>
+                </div>
+                <div class="bg-slate-50 rounded-2xl p-4 text-center">
+                    <p class="text-xs text-slate-500">Avg Age</p>
+                    <p class="text-2xl font-semibold">${p.avg_age ?? '—'}</p>
+                </div>
+                <div class="bg-slate-50 rounded-2xl p-4 text-center">
+                    <p class="text-xs text-slate-500">Avg Spend</p>
+                    <p class="text-2xl font-semibold">$${p.avg_spend ?? '—'}</p>
+                </div>
+                <div class="bg-slate-50 rounded-2xl p-4 text-center">
+                    <p class="text-xs text-slate-500">Avg Rating</p>
+                    <p class="text-2xl font-semibold">${p.avg_rating ?? '—'}</p>
+                </div>
+            </div>
+            <div class="text-xs text-slate-500 mt-1">Top gender: <span class="font-medium text-slate-700">${p.top_gender ?? '—'}</span></div>
+        `;
+        container.appendChild(card);
+    });
+
+    // Segment charts
+    if (spendChartObj) spendChartObj.destroy();
+    spendChartObj = new Chart(document.getElementById('spendChart'), {
+        type: 'bar',
+        data: {
+            labels: spendLabels,
+            datasets: [{ label:'Avg Spend ($)', data: spendValues, backgroundColor: PALETTE, borderRadius: 8 }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    if (ratingChartObj) ratingChartObj.destroy();
+    ratingChartObj = new Chart(document.getElementById('ratingChart'), {
+        type: 'bar',
+        data: {
+            labels: ratingLabels,
+            datasets: [{ label:'Avg Rating', data: ratingValues, backgroundColor: PALETTE, borderRadius: 8 }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { min: 0, max: 5 } }
+        }
+    });
+}
+
+// ─────────────────────────────────────────
+// MARKETING INSIGHTS
+// ─────────────────────────────────────────
+async function showInsights() {
+    const profiles = await eel.get_cluster_profiles()();
+
+    // Build data-driven insight blocks
+    let highSpend  = profiles.reduce((a,b) => (a.avg_spend  > b.avg_spend  ? a : b), profiles[0]);
+    let highRating = profiles.reduce((a,b) => (a.avg_rating > b.avg_rating ? a : b), profiles[0]);
+    let largest    = profiles.reduce((a,b) => (a.count      > b.count      ? a : b), profiles[0]);
+    let smallest   = profiles.reduce((a,b) => (a.count      < b.count      ? a : b), profiles[0]);
+
+    const insights = [
+        {
+            icon: '💸',
+            title: 'Prioritise High Spenders',
+            cluster: `Cluster ${highSpend?.cluster}`,
+            body: `This cluster has the highest average spend ($${highSpend?.avg_spend}). Roll out a premium loyalty programme, exclusive early access, and concierge-style support to retain these customers and grow their lifetime value.`
+        },
+        {
+            icon: '⭐',
+            title: 'Leverage Your Best Reviewers',
+            cluster: `Cluster ${highRating?.cluster}`,
+            body: `Customers here give an average rating of ${highRating?.avg_rating}. Invite them to a referral or ambassador programme. Their positive word-of-mouth is your most cost-effective marketing channel.`
+        },
+        {
+            icon: '📣',
+            title: 'Re-engage Your Largest Segment',
+            cluster: `Cluster ${largest?.cluster}`,
+            body: `This is your biggest group (${largest?.count?.toLocaleString()} customers). Run broad awareness campaigns, seasonal promotions, and personalised email sequences to maximise conversion rate across this audience.`
+        },
+        {
+            icon: '🎯',
+            title: 'Nurture the Smallest Cluster',
+            cluster: `Cluster ${smallest?.cluster}`,
+            body: `With only ${smallest?.count?.toLocaleString()} customers, this niche segment may represent a high-potential or at-risk group. Investigate their behaviour more closely and trial bespoke re-engagement or win-back campaigns.`
+        },
+        {
+            icon: '🛒',
+            title: 'Personalise Recommendations by Age',
+            cluster: 'All Clusters',
+            body: `Average ages vary across clusters. Tailor product recommendations and messaging tone to each group — younger segments may respond better to social-proof content, while older segments often value quality and reliability cues.`
+        },
+        {
+            icon: '📧',
+            title: 'Segment Your Email List',
+            cluster: 'All Clusters',
+            body: `Stop sending one-size-fits-all emails. Split your mailing list by cluster and A/B test subject lines, offers, and send times per segment. Even modest improvements in open rates compound significantly at scale.`
+        },
+        {
+            icon: '🏷️',
+            title: 'Target Lower-Spend Clusters with Promotions',
+            cluster: 'Lower-spend groups',
+            body: `Use time-limited flash sales, bundle discounts, and free-shipping thresholds to nudge lower-spending clusters towards their first higher-value purchase. Track lift per cluster to refine future spend.`
+        },
+        {
+            icon: '📊',
+            title: 'Monitor Cluster Drift Over Time',
+            cluster: 'Operational',
+            body: `Re-run clustering monthly or quarterly as new purchase data arrives. Track how customers migrate between clusters — acceleration into high-value clusters is a key health signal; drift towards inactivity is an early churn warning.`
+        }
+    ];
+
+    const container = document.getElementById('insightsContent');
+    container.innerHTML = '';
+
+    insights.forEach(ins => {
+        const card = document.createElement('div');
+        card.className = 'card card-bg bg-white rounded-3xl p-8 shadow-sm flex gap-6 items-start';
+        card.innerHTML = `
+            <div class="text-5xl mt-1">${ins.icon}</div>
+            <div class="flex-1">
+                <div class="flex items-center gap-3 mb-2">
+                    <h4 class="font-semibold text-xl">${ins.title}</h4>
+                    <span class="text-xs font-medium px-3 py-1 rounded-full bg-blue-100 text-blue-700">${ins.cluster}</span>
+                </div>
+                <p class="text-slate-600 leading-relaxed">${ins.body}</p>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+// ─────────────────────────────────────────
+// DOWNLOAD RESULTS
+// ─────────────────────────────────────────
+function downloadResults() {
+    if (!cachedResults || cachedResults.length === 0) {
+        showToast("No data to download. Run clustering first.", "error");
+        return;
+    }
+    const headers = Object.keys(cachedResults[0]);
+    const csv = [
+        headers.join(','),
+        ...cachedResults.map(row => headers.map(h => JSON.stringify(row[h] ?? '')).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'shopwise_results.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast("CSV downloaded successfully!");
+}
+
+// ─────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     showPage('dashboard');
-    showToast("Welcome to ShopWise – Upload your shopping trends dataset to begin", "success");
+    showToast("Welcome to ShopWise – Upload your dataset to begin", "success");
 });
 
-// Dark mode (bonus)
-function toggleDarkMode() {
-    document.documentElement.classList.toggle('dark');
-    // You can expand this with proper dark colors if desired
-}
 </script>
 
 </body>

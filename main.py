@@ -1,6 +1,8 @@
 import eel
 import sys
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')  # Must be BEFORE importing pyplot — suppresses all popup windows
 import matplotlib.pyplot as plt
 import base64
 from io import StringIO, BytesIO
@@ -177,7 +179,62 @@ def get_cluster_stats():
 
 
 # -----------------------------
-# GENERATE GRAPH
+# CLUSTER COUNT (for dashboard card)
+# -----------------------------
+@eel.expose
+def get_cluster_count():
+
+    global original_data
+
+    if original_data is None or 'Cluster' not in original_data.columns:
+        return 0
+
+    return int(original_data['Cluster'].nunique())
+
+
+# -----------------------------
+# AVERAGE REVIEW RATING (for dashboard card)
+# -----------------------------
+@eel.expose
+def get_avg_rating():
+
+    global original_data
+
+    if original_data is None or 'Review Rating' not in original_data.columns:
+        return 0.0
+
+    return round(float(original_data['Review Rating'].mean()), 2)
+
+
+# -----------------------------
+# CLUSTER PROFILES (for Customer Segments page)
+# Returns per-cluster aggregated stats for rich persona cards
+# -----------------------------
+@eel.expose
+def get_cluster_profiles():
+
+    global original_data
+
+    if original_data is None or 'Cluster' not in original_data.columns:
+        return []
+
+    profiles = []
+    for cluster_id, group in original_data.groupby('Cluster'):
+        profile = {
+            "cluster": int(cluster_id),
+            "count": int(len(group)),
+            "avg_age": round(float(group['Age'].mean()), 1) if 'Age' in group.columns else None,
+            "avg_spend": round(float(group['Purchase Amount (USD)'].mean()), 2) if 'Purchase Amount (USD)' in group.columns else None,
+            "avg_rating": round(float(group['Review Rating'].mean()), 2) if 'Review Rating' in group.columns else None,
+            "top_gender": group['Gender'].mode()[0] if 'Gender' in group.columns and len(group) > 0 else None,
+        }
+        profiles.append(profile)
+
+    return profiles
+
+
+# -----------------------------
+# GENERATE GRAPH (kept for legacy; not used by frontend charts anymore)
 # -----------------------------
 @eel.expose
 def get_cluster_graph():
@@ -187,7 +244,7 @@ def get_cluster_graph():
     if original_data is None:
         return ""
 
-    plt.figure(figsize=(6,4))
+    plt.figure(figsize=(6, 4))
 
     original_data['Cluster'].value_counts().sort_index().plot(kind='bar')
 
@@ -209,4 +266,4 @@ def get_cluster_graph():
 # -----------------------------
 # START APP
 # -----------------------------
-eel.start('index.html', size=(1300,850), port=0)
+eel.start('index.html', size=(1300, 850), port=0)
