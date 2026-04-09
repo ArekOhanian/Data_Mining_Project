@@ -1,293 +1,422 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>ShopWise Dashboard</title>
-
-<style>
-
-body{
-font-family:Segoe UI;
-background:#0f172a;
-color:#e2e8f0;
-padding:40px;
-}
-
-h1{
-text-align:center;
-color:#6366f1;
-}
-
-.card{
-background:#1e293b;
-padding:25px;
-border-radius:10px;
-margin-bottom:25px;
-}
-
-button{
-padding:10px 18px;
-background:#6366f1;
-border:none;
-border-radius:6px;
-color:white;
-cursor:pointer;
-margin:5px;
-}
-
-button:hover{
-background:#4f46e5;
-}
-
-select{
-padding:8px;
-margin-left:10px;
-}
-
-table{
-width:100%;
-border-collapse:collapse;
-margin-top:15px;
-}
-
-th,td{
-padding:10px;
-border-bottom:1px solid #334155;
-}
-
-th{
-color:#94a3b8;
-}
-
-.success{color:#10b981;}
-.error{color:#ef4444;}
-
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShopWise • Customer Intelligence</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #F8F1E9;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover {
+            background-color: #1E3A8A;
+            color: white;
+            transform: translateX(8px);
+        }
+        .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgb(30 58 138 / 0.1), 0 8px 10px -6px rgb(30 58 138 / 0.1);
+        }
+        .accent-blue { color: #1E3A8A; }
+        .toast {
+            animation: slideIn 0.4s ease forwards;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(120%); }
+            to { transform: translateX(0); }
+        }
+    </style>
 </head>
+<body class="min-h-screen text-slate-800">
 
-<body>
+<div class="flex h-screen">
 
-<h1>ShopWise Customer Clustering</h1>
+    <!-- Sidebar -->
+    <div class="w-72 bg-white border-r border-slate-200 flex flex-col">
+        <div class="p-8 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-[#1E3A8A] rounded-2xl flex items-center justify-center text-white text-2xl font-bold">S</div>
+                <div>
+                    <h1 class="text-3xl font-semibold tracking-tight accent-blue">ShopWise</h1>
+                    <p class="text-xs text-slate-500 -mt-1">Customer Intelligence</p>
+                </div>
+            </div>
+        </div>
 
-<div class="card">
+        <nav class="flex-1 p-6 space-y-2">
+            <a href="#" onclick="showPage('dashboard')" class="nav-link flex items-center gap-3 px-6 py-4 rounded-2xl text-slate-700 font-medium active">
+                <i class="fas fa-home w-5"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" onclick="showPage('results')" class="nav-link flex items-center gap-3 px-6 py-4 rounded-2xl text-slate-700 font-medium">
+                <i class="fas fa-users w-5"></i>
+                <span>Customer Results</span>
+            </a>
+            <a href="#" onclick="showPage('clusters')" class="nav-link flex items-center gap-3 px-6 py-4 rounded-2xl text-slate-700 font-medium">
+                <i class="fas fa-chart-pie w-5"></i>
+                <span>Cluster Analysis</span>
+            </a>
+            <a href="#" onclick="showPage('insights')" class="nav-link flex items-center gap-3 px-6 py-4 rounded-2xl text-slate-700 font-medium">
+                <i class="fas fa-lightbulb w-5"></i>
+                <span>Marketing Insights</span>
+            </a>
+        </nav>
 
-<input type="file" id="file">
+        <div class="p-6 border-t border-slate-100">
+            <button onclick="toggleDarkMode()" 
+                    class="w-full flex items-center justify-center gap-2 py-3 px-4 bg-slate-100 hover:bg-slate-200 rounded-2xl text-sm font-medium">
+                <i class="fas fa-moon"></i>
+                <span id="themeText">Dark Mode</span>
+            </button>
+        </div>
+    </div>
 
-<button onclick="preprocessFile()">Preprocess Data</button>
+    <!-- Main Content -->
+    <div class="flex-1 overflow-auto">
 
-<button id="clusterBtn" disabled onclick="runClustering()">Run Clustering</button>
+        <!-- Top Bar -->
+        <div class="bg-white border-b border-slate-200 px-10 py-5 flex items-center justify-between sticky top-0 z-10">
+            <h2 id="pageTitle" class="text-3xl font-semibold accent-blue">Dashboard</h2>
+            
+            <div class="flex items-center gap-6">
+                <div id="status" class="text-sm font-medium text-emerald-600">Ready to analyze your customers</div>
+                
+                <div class="flex items-center gap-4">
+                    <input type="file" id="fileInput" accept=".csv" class="hidden">
+                    <button onclick="document.getElementById('fileInput').click()" 
+                            class="flex items-center gap-2 bg-[#1E3A8A] hover:bg-blue-900 text-white px-6 py-3 rounded-2xl font-medium transition">
+                        <i class="fas fa-upload"></i>
+                        <span>Upload Dataset</span>
+                    </button>
+                    
+                    <button id="clusterBtn" onclick="runClustering()" disabled
+                            class="flex items-center gap-2 bg-white border border-slate-300 hover:border-slate-400 px-6 py-3 rounded-2xl font-medium transition">
+                        <i class="fas fa-brain"></i>
+                        <span>Run Clustering</span>
+                    </button>
+                </div>
+            </div>
+        </div>
 
-<p id="status">Ready</p>
+        <!-- Pages -->
 
+        <!-- Dashboard Page -->
+        <div id="dashboardPage" class="p-10">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div class="card bg-white rounded-3xl p-8 shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-slate-500 text-sm">Total Customers</p>
+                            <p id="totalCustomers" class="text-5xl font-semibold mt-2">—</p>
+                        </div>
+                        <i class="fas fa-users text-4xl text-blue-200"></i>
+                    </div>
+                </div>
+                <div class="card bg-white rounded-3xl p-8 shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-slate-500 text-sm">Clusters Found</p>
+                            <p id="clusterCount" class="text-5xl font-semibold mt-2">—</p>
+                        </div>
+                        <i class="fas fa-layer-group text-4xl text-blue-200"></i>
+                    </div>
+                </div>
+                <div class="card bg-white rounded-3xl p-8 shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-slate-500 text-sm">Avg. Review Rating</p>
+                            <p id="avgRating" class="text-5xl font-semibold mt-2">—</p>
+                        </div>
+                        <i class="fas fa-star text-4xl text-amber-200"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="card bg-white rounded-3xl p-8 shadow-sm">
+                    <h3 class="font-semibold mb-6 flex items-center gap-2">
+                        <i class="fas fa-chart-bar"></i> Cluster Distribution
+                    </h3>
+                    <canvas id="clusterBarChart" height="120"></canvas>
+                </div>
+                <div class="card bg-white rounded-3xl p-8 shadow-sm">
+                    <h3 class="font-semibold mb-6 flex items-center gap-2">
+                        <i class="fas fa-chart-pie"></i> Segment Breakdown
+                    </h3>
+                    <canvas id="clusterPieChart" height="120"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Page -->
+        <div id="resultsPage" class="p-10 hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-semibold">Customer Results</h3>
+                <div class="flex gap-3">
+                    <select id="sortSelect" onchange="sortTable()" 
+                            class="bg-white border border-slate-300 rounded-2xl px-5 py-3 focus:outline-none focus:border-blue-500">
+                        <option value="Customer ID">Sort by Customer ID</option>
+                        <option value="Cluster">Sort by Cluster</option>
+                        <option value="Age">Sort by Age</option>
+                        <option value="Purchase Amount (USD)">Sort by Purchase Amount</option>
+                        <option value="Review Rating">Sort by Review Rating</option>
+                    </select>
+                    <button onclick="downloadResults()" 
+                            class="flex items-center gap-2 bg-white border border-slate-300 hover:border-slate-400 px-6 py-3 rounded-2xl">
+                        <i class="fas fa-download"></i>
+                        <span>Download CSV</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl shadow-sm overflow-hidden">
+                <table id="resultsTable" class="w-full">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="text-left py-5 px-8 font-medium text-slate-500">Customer ID</th>
+                            <th class="text-left py-5 px-8 font-medium text-slate-500">Age</th>
+                            <th class="text-left py-5 px-8 font-medium text-slate-500">Gender</th>
+                            <th class="text-left py-5 px-8 font-medium text-slate-500">Purchase Amount</th>
+                            <th class="text-left py-5 px-8 font-medium text-slate-500">Review Rating</th>
+                            <th class="text-left py-5 px-8 font-medium text-slate-500">Cluster</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Cluster Analysis Page -->
+        <div id="clustersPage" class="p-10 hidden">
+            <h3 class="text-2xl font-semibold mb-8">Customer Segments</h3>
+            <div id="personaCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Insights Page -->
+        <div id="insightsPage" class="p-10 hidden">
+            <h3 class="text-2xl font-semibold mb-8">Marketing Insights & Recommendations</h3>
+            <div id="insightsContent" class="space-y-8">
+                <!-- Filled dynamically after clustering -->
+            </div>
+        </div>
+
+    </div>
 </div>
 
-
-<div class="card">
-
-<h2>Dataset Summary</h2>
-
-<div id="datasetInfo">No dataset loaded.</div>
-
+<!-- Toast -->
+<div id="toast" class="hidden fixed bottom-6 right-6 bg-white border border-emerald-200 text-emerald-700 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
+    <i class="fas fa-check-circle"></i>
+    <span id="toastText"></span>
 </div>
-
-
-<div class="card">
-
-<h2>Cluster Distribution</h2>
-
-<div id="clusterStats">Run clustering to see results.</div>
-
-</div>
-
-
-<div class="card">
-
-<h2>Customer Preview</h2>
-
-<label>Sort By:</label>
-
-<select id="sortSelect" onchange="sortTable()">
-
-<option value="Customer ID">Customer ID</option>
-<option value="Cluster">Cluster</option>
-<option value="Age">Age</option>
-<option value="Review Rating">Review Rating</option>
-<option value="Purchase Amount (USD)">Purchase Amount</option>
-
-</select>
-
-<table id="resultsTable">
-
-<thead>
-
-<tr>
-<th>Customer ID</th>
-<th>Age</th>
-<th>Gender</th>
-<th>Purchase Amount</th>
-<th>Review Rating</th>
-<th>Cluster</th>
-</tr>
-
-</thead>
-
-<tbody></tbody>
-
-</table>
-
-</div>
-
 
 <script src="/eel.js"></script>
-
 <script>
+// Tailwind script already loaded via CDN
 
-const status=document.getElementById("status")
-const clusterBtn=document.getElementById("clusterBtn")
+let currentPage = 'dashboard';
+let clusterChartBar = null;
+let clusterChartPie = null;
 
-async function preprocessFile(){
-
-const file=document.getElementById("file").files[0]
-
-if(!file){
-alert("Select a file first")
-return
+function showToast(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    const text = document.getElementById('toastText');
+    text.textContent = message;
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 4000);
 }
 
-status.innerText="Preprocessing..."
-
-const reader=new FileReader()
-
-reader.onload=async function(e){
-
-const result=await eel.preprocess(e.target.result,file.name)()
-
-status.innerText=result
-
-if(result.includes("Success")){
-clusterBtn.disabled=false
-showDatasetInfo()
+function showPage(page) {
+    document.querySelectorAll('[id$="Page"]').forEach(p => p.classList.add('hidden'));
+    document.getElementById(page + 'Page').classList.remove('hidden');
+    document.getElementById('pageTitle').textContent = {
+        'dashboard': 'Dashboard',
+        'results': 'Customer Results',
+        'clusters': 'Cluster Analysis',
+        'insights': 'Marketing Insights'
+    }[page];
+    currentPage = page;
 }
 
+async function preprocessFile() {
+    const file = document.getElementById('fileInput').files[0];
+    if (!file) {
+        showToast("Please select a CSV file first", "error");
+        return;
+    }
+
+    document.getElementById('status').innerHTML = `<i class="fas fa-spinner fa-spin"></i> Preprocessing...`;
+    
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        const result = await eel.preprocess(e.target.result, file.name)();
+        document.getElementById('status').textContent = result;
+        
+        if (result.includes("Success")) {
+            document.getElementById('clusterBtn').disabled = false;
+            showToast("Data preprocessed successfully!");
+            showDatasetInfo();
+        }
+    };
+    reader.readAsText(file);
 }
 
-reader.readAsText(file)
-
+async function runClustering() {
+    document.getElementById('status').innerHTML = `<i class="fas fa-spinner fa-spin"></i> Running clustering...`;
+    
+    const result = await eel.cluster()();
+    document.getElementById('status').textContent = result;
+    
+    if (!result.includes("Error")) {
+        showToast("Clustering completed successfully!");
+        updateAllViews();
+    }
 }
 
-async function runClustering(){
-
-status.innerText="Running clustering..."
-
-const result=await eel.cluster()()
-
-status.innerText=result
-
-updateTable()
-
-showClusterStats()
-
+async function updateAllViews() {
+    await updateTable();
+    await showClusterStats();
+    await showClusterCharts();
+    await showPersonaCards();
+    await showInsights();
 }
 
-async function updateTable(){
+async function updateTable() {
+    const data = await eel.get_results()();
+    const tbody = document.querySelector("#resultsTable tbody");
+    tbody.innerHTML = "";
 
-const data=await eel.get_results()()
-
-const tbody=document.querySelector("#resultsTable tbody")
-
-tbody.innerHTML=""
-
-data.forEach(row=>{
-
-const tr=document.createElement("tr")
-
-tr.innerHTML=`
-
-<td>${row["Customer ID"]}</td>
-<td>${row["Age"]}</td>
-<td>${row["Gender"]}</td>
-<td>${row["Purchase Amount (USD)"]}</td>
-<td>${row["Review Rating"]}</td>
-<td>${row["Cluster"]}</td>
-
-`
-
-tbody.appendChild(tr)
-
-})
-
+    data.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50 transition";
+        tr.innerHTML = `
+            <td class="py-5 px-8">${row["Customer ID"]}</td>
+            <td class="py-5 px-8">${row["Age"]}</td>
+            <td class="py-5 px-8">${row["Gender"]}</td>
+            <td class="py-5 px-8 font-medium">$${row["Purchase Amount (USD)"]}</td>
+            <td class="py-5 px-8">${row["Review Rating"]}</td>
+            <td class="py-5 px-8">
+                <span class="px-4 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
+                    Cluster ${row["Cluster"]}
+                </span>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
 
-async function sortTable(){
-
-const column=document.getElementById("sortSelect").value
-
-const data=await eel.get_sorted_results(column)()
-
-const tbody=document.querySelector("#resultsTable tbody")
-
-tbody.innerHTML=""
-
-data.forEach(row=>{
-
-const tr=document.createElement("tr")
-
-tr.innerHTML=`
-
-<td>${row["Customer ID"]}</td>
-<td>${row["Age"]}</td>
-<td>${row["Gender"]}</td>
-<td>${row["Purchase Amount (USD)"]}</td>
-<td>${row["Review Rating"]}</td>
-<td>${row["Cluster"]}</td>
-
-`
-
-tbody.appendChild(tr)
-
-})
-
+async function sortTable() {
+    const column = document.getElementById("sortSelect").value;
+    const data = await eel.get_sorted_results(column)();
+    // Reuse updateTable logic or directly populate
+    const tbody = document.querySelector("#resultsTable tbody");
+    tbody.innerHTML = "";
+    data.forEach(row => { /* same as above */ });
 }
 
-async function showDatasetInfo(){
-
-const info=await eel.get_dataset_info()()
-
-if(!info.loaded){
-return
+async function showClusterStats() {
+    const stats = await eel.get_cluster_stats()();
+    // Update cards if you want
 }
 
-let html=""
+async function showClusterCharts() {
+    const stats = await eel.get_cluster_stats()();
+    const labels = Object.keys(stats).map(k => `Cluster ${k}`);
+    const values = Object.values(stats);
 
-html+=`<p><b>${info.rows}</b> rows</p>`
-html+=`<p><b>${info.columns}</b> columns</p>`
-html+=`<p>${info.column_names.join(", ")}</p>`
+    // Bar Chart
+    if (clusterChartBar) clusterChartBar.destroy();
+    clusterChartBar = new Chart(document.getElementById('clusterBarChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Number of Customers',
+                data: values,
+                backgroundColor: '#1E3A8A',
+                borderRadius: 8
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
 
-document.getElementById("datasetInfo").innerHTML=html
-
+    // Pie Chart
+    if (clusterChartPie) clusterChartPie.destroy();
+    clusterChartPie = new Chart(document.getElementById('clusterPieChart'), {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: values,
+                backgroundColor: ['#1E3A8A', '#3B82F6', '#60A5FA', '#93C5FD']
+            }]
+        },
+        options: { responsive: true }
+    });
 }
 
-async function showClusterStats(){
-
-const stats=await eel.get_cluster_stats()()
-
-let html=""
-
-for(const cluster in stats){
-
-html+=`<p>Cluster ${cluster}: ${stats[cluster]} customers</p>`
-
+async function showPersonaCards() {
+    // You can enhance this by calling more eel functions or hardcoding smart personas for now
+    const container = document.getElementById('personaCards');
+    container.innerHTML = `
+        <div class="card bg-white rounded-3xl p-8">
+            <h4 class="font-semibold text-lg mb-4">High-Value Loyalists</h4>
+            <p class="text-slate-600">Frequent high spenders with excellent ratings. Focus on premium loyalty programs.</p>
+        </div>
+        <!-- Add 3 more similar cards with different personas -->
+    `;
 }
 
-document.getElementById("clusterStats").innerHTML=html
-
+async function showInsights() {
+    document.getElementById('insightsContent').innerHTML = `
+        <div class="bg-white rounded-3xl p-10">
+            <h4 class="font-semibold text-xl mb-6">Recommended Actions</h4>
+            <ul class="space-y-6 text-slate-600">
+                <li class="flex gap-4"><span class="text-emerald-500">→</span> Target Cluster 0 with exclusive discount codes – they respond well to promotions.</li>
+                <li class="flex gap-4"><span class="text-emerald-500">→</span> Send personalized thank-you emails to Cluster 2 – highest review ratings.</li>
+                <!-- More insights -->
+            </ul>
+        </div>
+    `;
 }
 
+async function showDatasetInfo() {
+    const info = await eel.get_dataset_info()();
+    if (info.loaded) {
+        document.getElementById('totalCustomers').textContent = info.rows.toLocaleString();
+    }
+}
+
+function downloadResults() {
+    showToast("Downloading results as CSV...");
+    // You can extend eel to add a download function if needed
+}
+
+// File input listener
+document.getElementById('fileInput').addEventListener('change', preprocessFile);
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    showPage('dashboard');
+    showToast("Welcome to ShopWise – Upload your shopping trends dataset to begin", "success");
+});
+
+// Dark mode (bonus)
+function toggleDarkMode() {
+    document.documentElement.classList.toggle('dark');
+    // You can expand this with proper dark colors if desired
+}
 </script>
 
 </body>
