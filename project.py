@@ -25,6 +25,9 @@ import glob
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score, davies_bouldin_score
 
+#association imports Arek Ohanian
+from mlxtend.frequent_patterns import apriori, association_rules, fpgrowth
+
 warnings.filterwarnings('ignore')
 
 print("Shopwise - Data Preprocessing and Integration")
@@ -878,3 +881,6 @@ if __name__ == "__main__":
     print("\nClustered data saved to 'clustered_shopping_trends.csv'")
 
     print("\nClustering pipeline completed")
+
+class shopAssociation:
+    None
