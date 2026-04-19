@@ -27,6 +27,7 @@ from sklearn.metrics import silhouette_score, davies_bouldin_score
 
 #association imports Arek Ohanian
 from mlxtend.frequent_patterns import apriori, association_rules, fpgrowth
+from mlxtend.preprocessing import TransactionEncoder
 
 warnings.filterwarnings('ignore')
 
@@ -825,6 +826,90 @@ class ShopWiseClustering:
        #cluster labels
         return self.data
 
+#Association Method
+class shopAssociation:
+    
+    #initializing the data
+    def __init__(self, data):
+        self.data = data.copy()
+        self.transaction_data= None
+        self.frequent_itemsets = None
+        self.rules = None
+
+    def prepare_transactions(self):
+        print("\nPreparing Transaction data for association mining")
+
+        df = self.data.copy()
+
+        selected_cols = ['Category', 'Location', 'Season', 'Subscription Status', 'Discount Applied', 'Promo Code Used']
+
+        selected_cols = [col for col in selected_cols if col in df.columns]
+
+        print(f"Using columns: {selected_cols}")
+
+        transactions = []
+
+        for _, row in df[selected_cols].iterrows():
+            items = []
+            for col in selected_cols:
+                value = str(row[col])
+                items.append(f"{col}={value}")
+            transactions.append(items)
+
+        te = TransactionEncoder()
+        te_array = te.fit(transactions).transform(transactions)
+
+        self.transaction_data = pd.DataFrame(te_array, columns = te.columns_)
+
+        print(f"Transaction data shape: {self.transaction_data.shape}")
+
+        return self.transaction_data
+    
+    #code to run either apriori or FP growth
+    def run_apriori(self, min_support=0.05):
+        print("\nRunning Apriori")
+
+        self.frequent_itemsets = apriori(self.transaction_data, min_support=min_support, use_colnames=True)
+
+        print(f"Found {len(self.frequent_itemsets)} frequent itemsets")
+
+        return self.frequent_itemsets
+    
+    def run_fp(self, min_support=0.05):
+        print("\nRunning FP-Growth")
+
+        self.frequent_itemsets = fpgrowth(self.transaction_data, min_suppport=min_support, use_colnames=True)
+
+        print(f"Found {len(self.frequent_itemsets)} frequent itemsets")
+
+        return self.frequent_itemsets
+
+    def generate_rules(self, min_confidence=0.5, metric="lift"):
+        print("\nGenerating association rules")
+
+        self.rules= association_rules(self.frequent_itemsets, metric=metric, min_threshold=min_confidence)
+
+        #sorting the rules
+        self.rules = self.rules.sort_values(by='lift', ascending=False)
+
+        print(f"Generated {len(self.rules)} rules")
+
+        return self.rules
+    
+
+    def display_top_rules(self, top_n=10):
+        print(f"\nTop {top_n} Association Rules:\n")
+
+        for i, row in self.rules.head(top_n).iterrows():
+            antecedents = ', '.join(list(row['antecedents']))
+            consequents = ', '.join(list(row['consequents']))
+
+            print(f"Rule {i}:")
+            print(f"  IF [{antecedents}] THEN [{consequents}]")
+            print(f"  Support: {row['support']:.3f}")
+            print(f"  Confidence: {row['confidence']:.3f}")
+            print(f"  Lift: {row['lift']:.3f}")
+            print("-" * 40)
 
 #main method
 
@@ -882,5 +967,20 @@ if __name__ == "__main__":
 
     print("\nClustering pipeline completed")
 
-class shopAssociation:
-    None
+    #association start
+    print("\nRunning Association Rule Mining")
+
+    #initialzing association
+    association = shopAssociation(processed_data)
+
+    #preparing the transactions
+    association.prepare_transactions()
+
+    #running the apriori algorithm with a min support of 5% can be tweaked to change the support or to fp growth instead of apriori by running run_fpgrowth instead
+    association.run_apriori(min_support=0.05)
+
+    #generating association rules
+    association.generate_rules(min_confidence=0.5)
+
+    #displaying the top rules
+    association.display_top_rules(top_n=10)
