@@ -30,7 +30,7 @@ warnings.filterwarnings('ignore')
 print("Shopwise - Data Preprocessing and Integration")
 
 #File finder
-    #kept having  issues with my file reading, so I got help from AI for this part
+    #kept having issues with my file reading, so I got help from AI for this part
 
 
 #check current directory first for the files
