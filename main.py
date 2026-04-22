@@ -18,7 +18,13 @@ from project import ShopWisePreprocessor, ShopWiseClustering
 # ====================== GROQ AI INTEGRATION ======================
 from groq import Groq
 
-GROQ_API_KEY = "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"
+import os
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+if not GROQ_API_KEY:
+    print("WARNING: GROQ_API_KEY environment variable is not set!")
+    # For local testing only - never commit a real key
 client = Groq(api_key=GROQ_API_KEY)
 
 eel.init('web')
