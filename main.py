@@ -247,5 +247,5 @@ def get_cluster_graph():
 #start app
 
 if __name__ == "__main__":
-    print("Starting ShopWise with Groq AI integration...")
+    print("Starting ShopWise...")
     eel.start('index.html', size=(1300, 850), port=0)

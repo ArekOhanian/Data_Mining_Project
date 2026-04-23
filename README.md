@@ -1,1 +1,1 @@
-In order to run project, run 'main.py', and the webpage will pop up. Results are also displayed in the terminal.
+In order to run project, download ZIP file of all code, extract the contents. Open in an IDE, and make sure you have all the imports installed, i.e. pip install groq, pip install eel, etc.. Then you can run the 'main.py' file and that will pull up the browser. Browser can be used and results will also pop up in the terminal.
