@@ -15,7 +15,8 @@ sys.modules['__main__'] = DummyMain()
 
 from project import ShopWisePreprocessor, ShopWiseClustering
 
-# ====================== GROQ AI INTEGRATION ======================
+#groq
+
 from groq import Groq
 
 GROQ_API_KEY = "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"
@@ -28,7 +29,8 @@ clustered_data = None
 original_data = None
 
 
-# ----------------------------- AI FUNCTION -----------------------------
+#groq integration
+
 @eel.expose
 def ask_ai(query: str, cluster_id: int = None):
     global original_data
@@ -92,7 +94,8 @@ Always ground your recommendations in the data provided."""
         return f"AI Error: {str(e)}"
 
 
-# ----------------------------- PREPROCESS -----------------------------
+#preprocess
+
 @eel.expose
 def preprocess(file_content, file_name):
     global processed_data, original_data
@@ -115,7 +118,8 @@ def preprocess(file_content, file_name):
         return f"Error: {str(e)}"
 
 
-# ----------------------------- CLUSTERING -----------------------------
+#clustering
+
 @eel.expose
 def cluster():
     global clustered_data, processed_data, original_data
@@ -139,7 +143,8 @@ def cluster():
         return f"Error: {str(e)}"
 
 
-# ----------------------------- DATA ACCESSORS -----------------------------
+#data accessors
+
 @eel.expose
 def get_results():
     global original_data
@@ -239,7 +244,8 @@ def get_cluster_graph():
     return img_base64
 
 
-# ----------------------------- START APP -----------------------------
+#start app
+
 if __name__ == "__main__":
     print("Starting ShopWise with Groq AI integration...")
     eel.start('index.html', size=(1300, 850), port=0)
