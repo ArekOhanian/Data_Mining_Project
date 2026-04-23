@@ -247,5 +247,8 @@ def get_cluster_graph():
 #start app
 
 if __name__ == "__main__":
-    print("Starting ShopWise...")
+    import os
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))  # ← ADD THIS LINE
+    print("Working directory:", os.getcwd())
+    eel.init('web')
     eel.start('index.html', size=(1300, 850), port=0)
