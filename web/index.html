@@ -770,6 +770,11 @@
         <span>Clusters</span>
         <span class="nav-badge" id="badge-clusters">—</span>
       </a>
+      <a href="#" class="nav-item" id="nav-associations" onclick="showPage('associations'); return false;">
+        <i class="nav-icon fas fa-link"></i>
+        <span>Associations</span>
+        <span class="nav-badge" id="badge-associations">—</span>
+      </a>
       <a href="#" class="nav-item" id="nav-insights" onclick="showPage('insights'); return false;">
         <i class="nav-icon fas fa-sparkles"></i>
         <span>AI Insights</span>
@@ -913,6 +918,56 @@
         </div>
       </div>
     </div>
+    <!-- ASSOCIATION MINING PAGE -->
+    <div id="associationsPage" class="content hidden">
+    <div style="margin-bottom:20px">
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:22px;margin-bottom:4px">
+      Association Rule Mining
+      </div>
+      <div style="font-size:13px;color:var(--text-dim)">
+        Discover patterns in customer transactions. Adjust minimum support and confidence thresholds to refine rules.
+      </div>
+    </div>
+
+  <!-- Controls for Association mining -->
+    <div style="display:flex; gap:12px; margin-bottom:16px; align-items:center">
+      <label>
+        Min Support:
+        <input type="number" id="minSupport" value="0.05" step="0.01" min="0" max="1">
+      </label>
+      <label>
+      Min Confidence:
+        <input type="number" id="minConfidence" value="0.5" step="0.05" min="0" max="1">
+      </label>
+      <button class="btn btn-primary" onclick="runMining()">
+        <i class="fas fa-play"></i> Run Mining
+      </button>
+      <button class="btn btn-ghost" onclick="clearRules()">
+        <i class="fas fa-trash"></i> Clear Results
+      </button>
+    </div>
+
+    <!-- Rules Table -->
+    <div id="rulesEmpty" class="empty-state">
+      <i class="fas fa-database"></i>
+      <h3>No rules yet</h3>
+      <p>Run association mining to see results here.</p>
+    </div>
+    <div id="rulesTableWrap" class="hidden" style="overflow-x:auto; margin-top:12px">
+      <table id="rulesTable">
+          <thead>
+            <tr>
+              <th>Antecedents</th>
+              <th>Consequents</th>
+              <th>Support</th>
+              <th>Confidence</th>
+              <th>Lift</th>
+            </tr>
+          </thead>
+        <tbody id="rulesTbody"></tbody>
+      </table>
+    </div>
+    </div>
 
     <!-- INSIGHTS PAGE -->
     <div id="insightsPage" class="content hidden">
@@ -1020,14 +1075,21 @@ function toast(msg, type = 'success') {
 }
 
 // ===== NAV =====
-function showPage(page) {
-  currentPage = page;
-  document.querySelectorAll('[id$="Page"]').forEach(p => p.classList.add('hidden'));
-  document.getElementById(page + 'Page').classList.remove('hidden');
-  document.querySelectorAll('.nav-item').forEach(a => a.classList.remove('active'));
-  document.getElementById('nav-' + page).classList.add('active');
-  const titles = { dashboard: 'Dashboard', results: 'Customers', clusters: 'Cluster Analysis', insights: 'AI Insights' };
-  document.getElementById('pageTitle').textContent = titles[page];
+function showPage(pageId) {
+  const pages = ['dashboard', 'results', 'clusters', 'associations', 'insights'];
+  pages.forEach(p => {
+    document.getElementById(p + 'Page').classList.add('hidden');
+  });
+  document.getElementById(pageId + 'Page').classList.remove('hidden');
+  document.getElementById('pageTitle').innerText = pageId.charAt(0).toUpperCase() + pageId.slice(1);
+  
+  // Update active sidebar link
+  pages.forEach(p => {
+    document.getElementById('nav-' + p).classList.remove('active');
+  });
+  document.getElementById('nav-' + pageId).classList.add('active');
+
+  window.onload = () => showPage('dashboard')
 }
 
 // ===== STATUS =====
@@ -1362,6 +1424,54 @@ function formatAIResponse(text) {
     .replace(/\n\n/g, '<br><br>')
     .replace(/\n/g, '<br>');
 }
+
+async function runMining() {
+    const minSupport = parseFloat(document.getElementById('minSupport').value);
+    const minConfidence = parseFloat(document.getElementById('minConfidence').value);
+
+    // Call Python backend
+    const msg = await eel.run_assocaition(minSupport, minConfidence)();
+    alert(msg);
+
+    const rules = await eel.get_association_rules()();
+    displayRules(rules);
+  }
+
+  function displayRules(rules) {
+    const tableWrap = document.getElementById('rulesTableWrap');
+    const emptyState = document.getElementById('rulesEmpty');
+    const tbody = document.getElementById('rulesTbody');
+
+    tbody.innerHTML = "";
+
+    if (!rules || rules.length === 0) {
+      tableWrap.classList.add('hidden');
+      emptyState.classList.remove('hidden');
+      return;
+    }
+
+    tableWrap.classList.remove('hidden');
+    emptyState.classList.add('hidden');
+
+    rules.forEach(rule => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${rule.antecedents}</td>
+        <td>${rule.consequents}</td>
+        <td>${(rule.support*100).toFixed(2)}%</td>
+        <td>${(rule.confidence*100).toFixed(2)}%</td>
+        <td>${rule.lift.toFixed(2)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function clearRules() {
+    document.getElementById('rulesTbody').innerHTML = "";
+    document.getElementById('rulesTableWrap').classList.add('hidden');
+    document.getElementById('rulesEmpty').classList.remove('hidden');
+  }
+
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {

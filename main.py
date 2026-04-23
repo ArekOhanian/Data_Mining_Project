@@ -6,6 +6,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import base64
 from io import StringIO, BytesIO
+import os
 
 # Prevent project.py main block from executing
 class DummyMain:
@@ -13,7 +14,7 @@ class DummyMain:
 
 sys.modules['__main__'] = DummyMain()
 
-from project import ShopWisePreprocessor, ShopWiseClustering
+from project import ShopWisePreprocessor, ShopWiseClustering, shopWiseAssociation
 
 #groq
 
@@ -27,6 +28,8 @@ eel.init('web')
 processed_data = None
 clustered_data = None
 original_data = None
+association_results = None
+assocition_rules_df = None
 
 
 #groq integration
@@ -141,6 +144,73 @@ def cluster():
         import traceback
         print(traceback.format_exc())
         return f"Error: {str(e)}"
+
+#association
+@eel.expose
+def run_assocaition(min_support=0.05, min_confidence=0.5):
+    global processed_data, association_results, association_rules_df
+
+    if processed_data is None:
+        return "Error: preprocess first"
+    
+    try:
+        assoc = shopWiseAssociation(processed_data)
+
+        assoc.prepare_transactions()
+        assoc.run_apriori(min_support=min_support)
+        assoc.generate_rules(min_confidence=min_confidence)
+
+        association_results = assoc
+        association_rules_df = assoc.rules
+
+        return f"Association complete: {len(association_rules_df)} rules found"
+    
+    except Exception as e:
+        return f"Error: {str(e)}"
+    
+@eel.expose
+def get_association_rules():
+    global association_rules_df
+
+    if association_rules_df is None or association_rules_df.empty:
+        return []
+    
+    rules = association_rules_df.copy()
+    
+    rules['antecedents'] = rules['antecedents'].apply(lambda x: ', '.join(list(x)))
+    rules['consequents'] = rules['consequents'].apply(lambda x: ', '.join(list(x)))
+
+    return rules[['antecedents', 'consequents', 'support', 'confidence', 'lift']]\
+        .head(50)\
+        .to_dict('records')
+
+
+@eel.expose
+def get_cluster_association(cluster_id, min_support=0.05, min_confidence=0.5):
+    global original_data
+
+    if original_data is None or 'Cluster' not in original_data.columns:
+        return []
+
+    cluster_df = original_data[original_data['Cluster'] == cluster_id]
+
+    if cluster_df.empty:
+        return []
+
+    assoc = shopWiseAssociation(cluster_df)
+
+    assoc.prepare_transactions()
+    assoc.run_apriori(min_support=min_support)
+    assoc.generate_rules(min_confidence=min_confidence)
+
+    rules = assoc.rules.copy()
+
+    rules['antecedents'] = rules['antecedents'].apply(lambda x: ', '.join(list(x)))
+    rules['consequents'] = rules['consequents'].apply(lambda x: ', '.join(list(x)))
+
+    return rules[['antecedents', 'consequents', 'support', 'confidence', 'lift']]\
+        .head(20)\
+        .to_dict('records')
 
 
 #data accessors
