@@ -823,6 +823,7 @@ class ShopWiseClustering:
         return self.data
 
 
+
 #main method
 
 if __name__ == "__main__":
@@ -831,6 +832,58 @@ if __name__ == "__main__":
 
     #get the preprocessed data
     processed_data = preprocessor.get_preprocessed_data()
+
+    # 4/30/26 Jason Luu
+    # getting the clustering data.
+    # Add this after clustering section, before the final print
+    print("\nCLASSIFICATION")
+
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.model_selection import train_test_split
+    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
+    # prepare data for classification
+    # creating target variable (High/Low satisfaction based on Review Rating)
+    processed_data['Satisfaction'] = pd.cut(
+        processed_data['Review Rating'],
+        bins=[-np.inf, 3.0, 4.0, np.inf],
+        labels=['Low', 'Medium', 'High']
+    )
+
+    # selecting features
+    feature_cols = ['Age', 'Purchase Amount (USD)', 'Previous Purchases', 'Cluster']
+    feature_cols.extend([col for col in processed_data.columns if '_encoded' in col][:5])
+
+    X = processed_data[feature_cols].fillna(0)
+    y = processed_data['Satisfaction']
+
+    # encode target
+    le = LabelEncoder()
+    y_encoded = le.fit_transform(y)
+
+    # split data
+    X_train, X_test, y_train, y_test = train_test_split(X, y_encoded, test_size=0.2, random_state=42)
+
+    # train model
+    rf = RandomForestClassifier(n_estimators=100, random_state=42)
+    rf.fit(X_train, y_train)
+
+    # predict and evaluate
+    y_pred = rf.predict(X_test)
+
+    print(f"\nClassification Results:")
+    print(f"  Accuracy:  {accuracy_score(y_test, y_pred):.4f}")
+    print(f"  Precision: {precision_score(y_test, y_pred, average='weighted'):.4f}")
+    print(f"  Recall:    {recall_score(y_test, y_pred, average='weighted'):.4f}")
+    print(f"  F1-Score:  {f1_score(y_test, y_pred, average='weighted'):.4f}")
+
+    # feature importance
+    importance_df = pd.DataFrame({
+        'feature': feature_cols,
+        'importance': rf.feature_importances_
+    }).sort_values('importance', ascending=False)
+    print(f"\nTop 5 Most Important Features:")
+    print(importance_df.head())
 
     #display final results
     print("\nCompleted preprocessing - Summary")
