@@ -865,11 +865,20 @@ class shopWiseAssociation:
 
         return self.transaction_data
     
-    #code to run apriori
+    #code to run either apriori or FP growth
     def run_apriori(self, min_support=0.05):
         print("\nRunning Apriori")
 
         self.frequent_itemsets = apriori(self.transaction_data, min_support=min_support, use_colnames=True)
+
+        print(f"Found {len(self.frequent_itemsets)} frequent itemsets")
+
+        return self.frequent_itemsets
+    
+    def run_fp(self, min_support=0.05):
+        print("\nRunning FP-Growth")
+
+        self.frequent_itemsets = fpgrowth(self.transaction_data, min_support=min_support, use_colnames=True)
 
         print(f"Found {len(self.frequent_itemsets)} frequent itemsets")
 
@@ -894,7 +903,7 @@ class shopWiseAssociation:
 
         return self.rules
     
-    #this is to display the top ten rules
+
     def display_top_rules(self, top_n=10):
         print(f"\nTop {top_n} Association Rules:\n")
 
