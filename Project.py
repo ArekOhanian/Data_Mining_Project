@@ -875,6 +875,7 @@ class shopWiseAssociation:
 
         return self.frequent_itemsets
 
+
     def generate_rules(self, min_confidence=0.5, metric="lift"):
         print("\nGenerating association rules")
 
@@ -974,7 +975,7 @@ if __name__ == "__main__":
     #preparing the transactions
     association.prepare_transactions()
 
-    #running the apriori algorithm with a min support of 5% can be tweaked to change the support or to fp growth instead of apriori by running run_fpgrowth instead
+    #running the apriori algorithm with a min support of 5% can be tweaked to change the support
     association.run_apriori(min_support=0.1)
 
     #generating association rules
