@@ -2,15 +2,15 @@
 # 3/3/26
 
 ##READ BEFORE PROCEEDING
-# kept having issues with reading the data from Arek's attached raw data
-# make sure that if you download it, put it in the same folder as your python file.
-# when downloaded from github, it downloads as an .xlsx file but has the .csv file format at the end
-# this is still considered an excel file, which stumped me yesterday (3/3/26)
-# just tried to implement a file checker (with the help of AI).
-# shopping_trends and shopping_trends_updated
+    #kept having issues with reading the data from Arek's attached raw data
+        #make sure that if you download it, put it in the same folder as your python file.
+            #when downloaded from github, it downloads as an .xlsx file but has the .csv file format at the end
+                #this is still considered an excel file, which stumped me yesterday (3/3/26)
+                    #just tried to implement a file checker (with the help of AI).
+    #shopping_trends and shopping_trends_updated
 
 
-# added extra imports from arek's code
+#added extra imports from arek's code
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -21,23 +21,27 @@ import warnings
 import os
 import glob
 
-# clustering imports
+#clustering imports
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score, davies_bouldin_score
+
+#association imports Arek Ohanian
+from mlxtend.frequent_patterns import apriori, association_rules, fpgrowth
+from mlxtend.preprocessing import TransactionEncoder
 
 warnings.filterwarnings('ignore')
 
 print("Shopwise - Data Preprocessing and Integration")
 
-# File finder
-# kept having issues with my file reading, so I got help from AI for this part
+#File finder
+    #kept having issues with my file reading, so I got help from AI for this part
 
 
-# check current directory first for the files
+#check current directory first for the files
 current_dir = os.getcwd()
 print(f"Current directory: {current_dir}")
 
-# list of all files in current directory
+#list of all files in current directory
 print("\nFiles in current directory:")
 all_files = os.listdir('.')
 csv_files = []
@@ -51,11 +55,12 @@ for file in all_files:
         excel_files.append(file)
         print(f"Excel: {file}")
 
-# search for shopping trends files specifically
+#search for shopping trends files specifically
 print("\nSearching for shopping trends files...")
 shopping_files = []
 
-# recursive search (search in all subfolders)
+
+#recursive search (search in all subfolders)
 print("\nSearching in all subfolders...")
 for root, dirs, files in os.walk('.'):
     for file in files:
@@ -70,7 +75,7 @@ print("loading file...")
 dataset = None
 load_attempts = []
 
-# try all found shopping files first
+#try all found shopping files first
 if shopping_files:
     for file_path in shopping_files:
         try:
@@ -84,7 +89,7 @@ if shopping_files:
                 print(f"Successfully loaded Excel: {file_path}")
                 break
             else:
-                # try as CSV first, then Excel
+                #try as CSV first, then Excel
                 try:
                     dataset = pd.read_csv(file_path)
                     print(f"Successfully loaded as CSV: {file_path}")
@@ -97,7 +102,7 @@ if shopping_files:
             print(f" Failed: {e}")
             load_attempts.append(f"{file_path}: {e}")
 
-# if no shopping files found, try common filenames
+#if no shopping files found, try common filenames
 if dataset is None:
     print("\nTrying common filenames...")
 
@@ -127,7 +132,8 @@ if dataset is None:
                 print(f"Failed: {e}")
                 continue
 
-# continue with preprocessing
+
+#continue with preprocessing
 print("Dataset successfully loaded")
 
 print(f"Shape: {dataset.shape[0]} rows × {dataset.shape[1]} columns")
@@ -138,14 +144,15 @@ print(f"Total entries: {len(dataset)}")
 print(f"Columns: {list(dataset.columns)}")
 
 
-# Jason's integration and preprocessing
+
+#Jason's integration and preprocessing
 
 
 class ShopWisePreprocessor:
-    # data cleaning, encoding, scaling, feature "engineering"
+    #data cleaning, encoding, scaling, feature "engineering"
 
     def __init__(self, data):
-        # first initialize preprocessor with loaded data set
+        #first initialize preprocessor with loaded data set
 
         self.raw_data = data.copy()
         self.processed_data = None
@@ -160,13 +167,13 @@ class ShopWisePreprocessor:
         print(f"Total features: {len(self.raw_data.columns)}")
 
     def analyze_data_quality(self):
-        # data quality analysis
+        #data quality analysis
 
         print("Data quality analysis")
 
         quality_report = {}
 
-        # check for missing values
+        #check for missing values
         print("\nMissing Value Check")
         missing_values = self.raw_data.isnull().sum()
         missing_percentage = (missing_values / len(self.raw_data)) * 100
@@ -179,7 +186,7 @@ class ShopWisePreprocessor:
 
         print(missing_df[missing_df['Missing Count'] > 0])
 
-        # check data types
+        #check data types
         print("\nData Types Analysis")
         dtypes_df = pd.DataFrame({
             'Column': self.raw_data.columns,
@@ -188,12 +195,12 @@ class ShopWisePreprocessor:
         })
         print(dtypes_df)
 
-        # check for duplicates
+        #check for duplicates
         duplicates = self.raw_data.duplicated().sum()
         print(f"\nDuplicate Analysis")
         print(f"Duplicate rows: {duplicates} ({duplicates / len(self.raw_data) * 100:.2f}%)")
 
-        # check for outliers in numerical columns
+        #check for outliers in numerical columns
         print("\nOutlier Analysis")
         numerical_cols = self.raw_data.select_dtypes(include=[np.number]).columns
         outlier_report = []
@@ -219,7 +226,7 @@ class ShopWisePreprocessor:
         outlier_df = pd.DataFrame(outlier_report)
         print(outlier_df)
 
-        # check cardinality of categorical columns
+        #check cardinality of categorical columns
         print("\nCategorical Columns Cardinality")
         categorical_cols = self.raw_data.select_dtypes(include=['object']).columns
         cardinality_report = []
@@ -235,7 +242,7 @@ class ShopWisePreprocessor:
         cardinality_df = pd.DataFrame(cardinality_report)
         print(cardinality_df)
 
-        # store report for l8r
+        #store report for l8r
         quality_report['missing'] = missing_df
         quality_report['dtypes'] = dtypes_df
         quality_report['duplicates'] = duplicates
@@ -245,14 +252,14 @@ class ShopWisePreprocessor:
         return quality_report
 
     def handle_missing_values(self, strategy='auto'):
-        # missing values in the dataset (specifically auto, mean, median, mode, or drop)
-        # auto is a method to choose best option "automatically"
+        #missing values in the dataset (specifically auto, mean, median, mode, or drop)
+            #auto is a method to choose best option "automatically"
 
         print("Handling missing values")
 
         df = self.raw_data.copy()
 
-        # check for missing values
+        #check for missing values
         missing_before = df.isnull().sum().sum()
         if missing_before == 0:
             print("No missing values found in the dataset")
@@ -262,7 +269,7 @@ class ShopWisePreprocessor:
         print(f"\nMissing values before handling: {missing_before}")
         print(df.isnull().sum()[df.isnull().sum() > 0])
 
-        # separate numerical and categorical columns
+        #separate numerical and categorical columns
         numerical_cols = df.select_dtypes(include=[np.number]).columns.tolist()
         categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
 
@@ -270,7 +277,7 @@ class ShopWisePreprocessor:
         print(f"Categorical columns: {categorical_cols}")
 
         if strategy == 'auto':
-            # auto-select is the best strategy for each column
+            #auto-select is the best strategy for each column
             for col in df.columns:
                 missing_pct = df[col].isnull().sum() / len(df) * 100
 
@@ -279,26 +286,26 @@ class ShopWisePreprocessor:
                         print(f"Column '{col}' has {missing_pct:.1f}% missing - consider dropping")
 
                     if col in numerical_cols:
-                        # for numerical: use median (more robust to outliers)
+                        #for numerical: use median (more robust to outliers)
                         median_val = df[col].median()
                         df[col].fillna(median_val, inplace=True)
                         print(f"Filled '{col}' with median: {median_val:.2f}")
 
-                    else:  # categorical
-                        # for categorical: use mode (most frequent)
+                    else:  #categorical
+                        #for categorical: use mode (most frequent)
                         mode_val = df[col].mode()[0] if not df[col].mode().empty else 'Unknown'
                         df[col].fillna(mode_val, inplace=True)
                         print(f"Filled '{col}' with mode: '{mode_val}'")
 
         elif strategy == 'drop':
-            # drop rows with any missing values
+            #drop rows with any missing values
             rows_before = len(df)
             df.dropna(inplace=True)
             rows_after = len(df)
             print(f"Dropped {rows_before - rows_after} rows with missing values")
 
         else:
-            # use of specified strategy for all columns
+            #use of specified strategy for all columns
             if strategy in ['mean', 'median']:
                 imputer = SimpleImputer(strategy=strategy)
                 df[numerical_cols] = imputer.fit_transform(df[numerical_cols])
@@ -315,8 +322,8 @@ class ShopWisePreprocessor:
         return df
 
     def encode_categorical_variables(self, method='label'):
-        # need this to encode our categorical variables into numbers.
-        # machine learning in scikit needs this for smoother data processing. (like clustering.....)
+        #need this to encode our categorical variables into numbers.
+            #machine learning in scikit needs this for smoother data processing. (like clustering.....)
 
         print("Encoding categorical variables")
 
@@ -325,22 +332,22 @@ class ShopWisePreprocessor:
 
         df = self.processed_data.copy()
 
-        # identify categorical columns
+        #identify categorical columns
         categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
 
-        # remove ID columns from encoding ( should be kept as identifiers)
+        #remove ID columns from encoding ( should be kept as identifiers)
         id_cols = [col for col in categorical_cols if 'id' in col.lower() or 'ID' in col]
         categorical_cols = [col for col in categorical_cols if col not in id_cols]
 
         print(f"\nCategorical columns to encode: {categorical_cols}")
 
         if method == 'label':
-            # label encoding
+            #label encoding
             for col in categorical_cols:
                 self.label_encoders[col] = LabelEncoder()
                 df[col + '_encoded'] = self.label_encoders[col].fit_transform(df[col].astype(str))
 
-                # store mapping for reference in scikit
+                #store mapping for reference in scikit
                 unique_values = df[col].unique()
                 mapping = dict(zip(
                     self.label_encoders[col].classes_,
@@ -362,7 +369,7 @@ class ShopWisePreprocessor:
         return df
 
     def scale_numerical_features(self, method='standard'):
-        # for upscaling numerical features so model can perform better
+        #for upscaling numerical features so model can perform better
 
         print("Scaling numerical features")
 
@@ -371,10 +378,10 @@ class ShopWisePreprocessor:
 
         df = self.processed_data.copy()
 
-        # identify numerical columns to scale
+        #identify numerical columns to scale
         numerical_cols = df.select_dtypes(include=[np.number]).columns.tolist()
 
-        # don't scale ID columns or encoded categorical variables
+        #don't scale ID columns or encoded categorical variables
         cols_to_scale = []
         for col in numerical_cols:
             if ('id' not in col.lower() and 'ID' not in col and
@@ -396,7 +403,7 @@ class ShopWisePreprocessor:
                 self.scalers['minmax'] = scaler
                 print(f"Applied MinMaxScaler (range: 0 to 1)")
 
-            # show scaling results
+            #show scaling results
             print(f"\nScaling results (first 5 rows):")
             print(df[cols_to_scale].head())
 
@@ -404,7 +411,7 @@ class ShopWisePreprocessor:
         return df
 
     def create_feature_engineering(self):
-        # feature engineering for creating new features (a bit self explanatory)
+        #feature engineering for creating new features (a bit self explanatory)
 
         print("Feature engineering")
 
@@ -413,20 +420,20 @@ class ShopWisePreprocessor:
 
         df = self.processed_data.copy()
 
-        # customer value metrics
+        #customer value metrics
         if 'Purchase Amount (USD)' in df.columns:
             # high value customer flag
             purchase_mean = df['Purchase Amount (USD)'].mean()
             df['Is_High_Value'] = (df['Purchase Amount (USD)'] > purchase_mean).astype(int)
             print(f"Created 'Is_High_Value' (threshold: ${purchase_mean:.2f})")
 
-        # purchase frequency scoring
+        #purchase frequency scoring
         if 'Previous Purchases' in df.columns:
             freq_mean = df['Previous Purchases'].mean()
             df['Is_Frequent_Buyer'] = (df['Previous Purchases'] > freq_mean).astype(int)
             print(f"Created 'Is_Frequent_Buyer' (threshold: {freq_mean:.1f} purchases)")
 
-        # customer loyalty scoring
+        #customer loyalty scoring
         if 'Subscription Status' in df.columns:
             df['Has_Subscription'] = (df['Subscription Status'] == 'Yes').astype(int)
             print(f"Created 'Has_Subscription' from Subscription Status")
@@ -448,21 +455,21 @@ class ShopWisePreprocessor:
             )
             print(f"Created 'Customer_Engagement_Score' (0-3 scale)")
 
-        # categorization for age groups
+        #categorization for age groups
         if 'Age' in df.columns:
             bins = [0, 25, 35, 50, 65, 100]
             labels = ['Young Adult', 'Adult', 'Middle Age', 'Senior', 'Elder']
             df['Age_Group'] = pd.cut(df['Age'], bins=bins, labels=labels)
             print(f"Created 'Age_Group' from Age")
 
-            # encode age group
+            #encode age group
             age_encoder = LabelEncoder()
             df['Age_Group_encoded'] = age_encoder.fit_transform(df['Age_Group'].astype(str))
             print(f"     Age groups: {df['Age_Group'].unique().tolist()}")
 
-        # spending per purchase
+        #spending per purchase
         if 'Purchase Amount (USD)' in df.columns and 'Previous Purchases' in df.columns:
-            # avoid division by zero
+            #avoid division by zero
             df['Spending_Per_Purchase'] = df['Purchase Amount (USD)'] / (df['Previous Purchases'] + 1)
             print(f"Created 'Spending_Per_Purchase'")
 
@@ -470,7 +477,7 @@ class ShopWisePreprocessor:
         return df
 
     def remove_outliers(self, method='iqr', threshold=1.5):
-        # removing outliers after generating numerical features (mainly z score and interquartile range)
+        #removing outliers after generating numerical features (mainly z score and interquartile range)
 
         print("Handling outliers")
 
@@ -479,7 +486,7 @@ class ShopWisePreprocessor:
 
         df = self.processed_data.copy()
 
-        # identify numerical columns (excluding encoded ones)
+        #identify numerical columns (excluding encoded ones)
         numerical_cols = df.select_dtypes(include=[np.number]).columns.tolist()
         cols_to_check = [col for col in numerical_cols if '_encoded' not in col]
 
@@ -495,7 +502,7 @@ class ShopWisePreprocessor:
 
                 outliers = df[(df[col] < lower_bound) | (df[col] > upper_bound)]
                 if len(outliers) > 0:
-                    # cap the outliers instead of removing to keep data
+                    #cap the outliers instead of removing to keep data
                     df[col] = df[col].clip(lower_bound, upper_bound)
                     outliers_removed += len(outliers)
                     print(f"Capped {len(outliers)} outliers in '{col}'")
@@ -504,7 +511,7 @@ class ShopWisePreprocessor:
                 z_scores = np.abs((df[col] - df[col].mean()) / df[col].std())
                 outliers = df[z_scores > threshold]
                 if len(outliers) > 0:
-                    # keep but cap at threshold
+                    #keep but cap at threshold
                     mean = df[col].mean()
                     std = df[col].std()
                     df[col] = df[col].clip(mean - threshold * std, mean + threshold * std)
@@ -517,7 +524,7 @@ class ShopWisePreprocessor:
         return df
 
     def validate_preprocessing(self):
-        # validation and report builing
+        #validation and report builing
 
         print("Preprocessing validation")
 
@@ -525,34 +532,34 @@ class ShopWisePreprocessor:
             print("No processed data found. Run preprocessing steps first.")
             return
 
-        # check for missing values
+        #check for missing values
         missing = self.processed_data.isnull().sum().sum()
         print(f"\nMissing Values Check:")
         print(f"   Total missing values: {missing}")
 
-        # check data types
+        #check data types
         print(f"\nData types report:")
         dtypes_summary = self.processed_data.dtypes.value_counts()
         for dtype, count in dtypes_summary.items():
             print(f"   {dtype}: {count} columns")
 
-        # check shape
+        #check shape
         print(f"\nDataset shape:")
         print(f"   Rows: {self.processed_data.shape[0]}")
         print(f"   Columns: {self.processed_data.shape[1]}")
         print(f"   New features created: {self.processed_data.shape[1] - self.raw_data.shape[1]}")
 
-        # check numerical ranges
+        #check numerical ranges
         print(f"\nNumerical Features Range:")
         numerical_cols = self.processed_data.select_dtypes(include=[np.number]).columns
         for col in numerical_cols[:5]:  # Show first 5
             print(f"   ✓ {col}: [{self.processed_data[col].min():.2f}, {self.processed_data[col].max():.2f}]")
 
-        # summary statistics
+        #summary statistics
         print(f"\nSummary Statistics (numerical features):")
         print(self.processed_data.describe())
 
-        # save preprocessing report
+        #save preprocessing report
         report = {
             'original_shape': self.raw_data.shape,
             'processed_shape': self.processed_data.shape,
@@ -566,14 +573,14 @@ class ShopWisePreprocessor:
         return report
 
     def get_preprocessed_data(self):
-        # output of full preprocessed dataset
+        #output of full preprocessed dataset
         if self.processed_data is None:
             print("⚠No processed data found. Run preprocessing steps first.")
             return self.raw_data
         return self.processed_data
 
     def save_preprocessed_data(self, filename='preprocessed_shopping_trends.csv'):
-        # save preprocessed data as csv file
+        #save preprocessed data as csv file
 
         if self.processed_data is not None:
             self.processed_data.to_csv(filename, index=False)
@@ -581,45 +588,46 @@ class ShopWisePreprocessor:
         else:
             print("No processed data to save.")
 
-            # running complete preprocessing pipeline
 
+                                                    #running complete preprocessing pipeline
 
 def run_complete_preprocessing_pipeline(data):
-    # run entire pipeline with all steps
+    #run entire pipeline with all steps
 
     print("Shopwise - complete preprocessing pipeline")
 
-    # initialize preprocessor
+
+    #initialize preprocessor
     preprocessor = ShopWisePreprocessor(data)
 
-    # data quality analysis
+    #data quality analysis
     quality_report = preprocessor.analyze_data_quality()
 
-    # handle missing values
+    #handle missing values
     preprocessor.handle_missing_values(strategy='auto')
 
-    # encode categorical variables
+    #encode categorical variables
     preprocessor.encode_categorical_variables(method='label')
 
-    # scale numerical features
+    #scale numerical features
     preprocessor.scale_numerical_features(method='standard')
 
-    # feature engineering
+    #feature engineering
     preprocessor.create_feature_engineering()
 
-    # handle outliers
+    #handle outliers
     preprocessor.remove_outliers(method='iqr', threshold=1.5)
 
-    # preprocessing validation
+    #preprocessing validation
     validation_report = preprocessor.validate_preprocessing()
 
-    # save processed data
+    #save processed data
     preprocessor.save_preprocessed_data('preprocessed_shopping_trends.csv')
 
     return preprocessor
 
-    # clustering implemenetation
 
+                                                                    #clustering implemenetation
 
 class ShopWiseClustering:
 
@@ -631,39 +639,38 @@ class ShopWiseClustering:
         print("\nClustering Initialized")
 
     def prepare_clustering_data(self, feature_cols=None):
-        # prepare data for clustering using relevant info
+       #prepare data for clustering using relevant info
         print("\nPreparing data for clustering")
 
-        # default features if none provided
+        #default features if none provided
         if feature_cols is None:
-            # select numerical columns that would be good for clustering
+            #select numerical columns that would be good for clustering
             potential_features = ['Age', 'Purchase Amount (USD)', 'Review Rating',
                                   'Previous Purchases', 'Is_High_Value', 'Is_Frequent_Buyer',
                                   'Has_Subscription', 'Used_Discount', 'Used_Promo',
                                   'Customer_Engagement_Score', 'Spending_Per_Purchase']
 
-            # only keep features that exist in the data
+            #only keep features that exist in the data
             feature_cols = [col for col in potential_features if col in self.data.columns]
 
-            # add encoded categorical features (limit it)
+            #add encoded categorical features (limit it)
             encoded_features = [col for col in self.data.columns if '_encoded' in col]
-            feature_cols.extend(encoded_features[
-                                    :5])  # take first 5 encoded features to prevent too many dimensions, prevent higher computational complexity
+            feature_cols.extend(encoded_features[:5])  #take first 5 encoded features to prevent too many dimensions, prevent higher computational complexity
 
         self.cluster_features = feature_cols
         print(f"Selected features for clustering: {feature_cols}")
 
-        # extracting features
+        #extracting features
         X = self.data[feature_cols].copy()
 
-        # handle any remaining NaN values
+        #handle any remaining NaN values
         X = X.fillna(X.mean())
 
         return X
 
     def find_optimal_clusters(self, X, max_clusters=10):
-        # optimal clusters using silhouette score (the -1 to 0 to 1 scoring of relations to other clusters
-        # and davie-bouldin index, which averages the similarity between each cluster and its MOST similar one. (0 is best score for davies bouldin, approaching infinity is no good)
+        #optimal clusters using silhouette score (the -1 to 0 to 1 scoring of relations to other clusters
+            #and davie-bouldin index, which averages the similarity between each cluster and its MOST similar one. (0 is best score for davies bouldin, approaching infinity is no good)
 
         print("\nFinding optimal number of clusters")
 
@@ -682,7 +689,7 @@ class ShopWiseClustering:
             davies_bouldin_scores.append(davies_bouldin_avg)
             print(f"  k={k}: Silhouette={silhouette_avg:.4f}, Davies-Bouldin={davies_bouldin_avg:.4f}")
 
-        # plot the scores
+        #plot the scores
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
 
         ax1.plot(K_range, silhouette_scores, 'bo-')
@@ -700,7 +707,7 @@ class ShopWiseClustering:
         plt.tight_layout()
         plt.show()
 
-        # return optimal k (highest silhouette or lowest davies-nouldin)
+        #return optimal k (highest silhouette or lowest davies-nouldin)
         optimal_k_silhouette = K_range[np.argmax(silhouette_scores)]
         optimal_k_db = K_range[np.argmin(davies_bouldin_scores)]
 
@@ -710,21 +717,21 @@ class ShopWiseClustering:
         return optimal_k_silhouette, silhouette_scores, davies_bouldin_scores
 
     def perform_clustering(self, n_clusters=4, random_state=42):
-        # now perfrming clustering with a specific number of clusters
+        #now perfrming clustering with a specific number of clusters
 
         print(f"\nPerforming K-Means clustering with k={n_clusters}")
 
-        # prepare data for clustering, easier call this way
+        #prepare data for clustering, easier call this way
         X = self.prepare_clustering_data()
 
-        # perform clustering
+        #perform clustering
         self.kmeans_model = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=10)
         self.cluster_labels = self.kmeans_model.fit_predict(X)
 
-        # add cluster labels to data
+        #add cluster labels to data
         self.data['Cluster'] = self.cluster_labels
 
-        # clustering evaluation
+        #clustering evaluation
         silhouette_avg = silhouette_score(X, self.cluster_labels)
         davies_bouldin_avg = davies_bouldin_score(X, self.cluster_labels)
 
@@ -732,7 +739,7 @@ class ShopWiseClustering:
         print(f"  Silhouette Score: {silhouette_avg:.4f}")
         print(f"  Davies-Bouldin Index: {davies_bouldin_avg:.4f}")
 
-        # cluster distribution
+        #cluster distribution
         cluster_dist = self.data['Cluster'].value_counts().sort_index()
         print(f"\nCluster Distribution:")
         for cluster, count in cluster_dist.items():
@@ -742,25 +749,25 @@ class ShopWiseClustering:
         return self.cluster_labels
 
     def analyze_clusters(self):
-        # characteristics of clusters
+        #characteristics of clusters
         print("\nAnalyzing Cluster Characteristics")
 
-        # selecting columns for analysis
+        #selecting columns for analysis
         analysis_cols = ['Age', 'Purchase Amount (USD)', 'Review Rating',
                          'Previous Purchases', 'Is_High_Value', 'Is_Frequent_Buyer']
         analysis_cols = [col for col in analysis_cols if col in self.data.columns]
 
-        # group by cluster and calculate means
+        #group by cluster and calculate means
         cluster_profile = self.data.groupby('Cluster')[analysis_cols].mean()
         print("\nCluster Profiles (mean values):")
         print(cluster_profile)
 
-        # create customer personas (general identifiers for them)
+        #create customer personas (general identifiers for them)
         print("\nCustomer Personas by Cluster:")
         for cluster in range(len(cluster_profile)):
             profile = cluster_profile.loc[cluster]
 
-            # determine characteristics
+            #determine characteristics
             if 'Purchase Amount (USD)' in profile:
                 if profile['Purchase Amount (USD)'] > self.data['Purchase Amount (USD)'].mean():
                     spending = "High spender"
@@ -786,25 +793,25 @@ class ShopWiseClustering:
                 if col in profile:
                     print(f"    • {col}: {profile[col]:.2f}")
 
-        # visualize clusters
+        #visualize clusters
         fig, axes = plt.subplots(2, 2, figsize=(12, 10))
 
-        # age distribution by cluster
+        #age distribution by cluster
         if 'Age' in self.data.columns:
             self.data.boxplot(column='Age', by='Cluster', ax=axes[0, 0])
             axes[0, 0].set_title('Age Distribution by Cluster')
 
-        # purchase amount by cluster
+        #purchase amount by cluster
         if 'Purchase Amount (USD)' in self.data.columns:
             self.data.boxplot(column='Purchase Amount (USD)', by='Cluster', ax=axes[0, 1])
             axes[0, 1].set_title('Purchase Amount by Cluster')
 
-        # review rating by cluster
+        #review rating by cluster
         if 'Review Rating' in self.data.columns:
             self.data.boxplot(column='Review Rating', by='Cluster', ax=axes[1, 0])
             axes[1, 0].set_title('Review Rating by Cluster')
 
-        # previous purchases by cluster
+        #previous purchases by cluster
         if 'Previous Purchases' in self.data.columns:
             self.data.boxplot(column='Previous Purchases', by='Cluster', ax=axes[1, 1])
             axes[1, 1].set_title('Previous Purchases by Cluster')
@@ -816,20 +823,104 @@ class ShopWiseClustering:
         return cluster_profile
 
     def get_clustered_data(self):
-        # cluster labels
+       #cluster labels
         return self.data
 
+#Association Method
+class shopWiseAssociation:
+    
+    #initializing the data
+    def __init__(self, data):
+        self.data = data.copy()
+        self.transaction_data= None
+        self.frequent_itemsets = None
+        self.rules = None
+
+    def prepare_transactions(self):
+        print("\nPreparing Transaction data for association mining")
+
+        df = self.data.copy()
+
+        selected_cols = ['Category', 'Location', 'Season', 'Subscription Status', 'Discount Applied', 'Promo Code Used']
+
+        selected_cols = [col for col in selected_cols if col in df.columns]
+
+        print(f"Using columns: {selected_cols}")
+
+        transactions = []
+
+        for _, row in df[selected_cols].iterrows():
+            items = []
+            for col in selected_cols:
+                value = str(row[col])
+                items.append(f"{col}={value}")
+            transactions.append(items)
+
+        te = TransactionEncoder()
+        te_array = te.fit(transactions).transform(transactions)
+
+        self.transaction_data = pd.DataFrame(te_array, columns = te.columns_)
+
+        print(f"Transaction data shape: {self.transaction_data.shape}")
+
+        return self.transaction_data
+    
+    #code to run either apriori or FP growth
+    def run_apriori(self, min_support=0.05):
+        print("\nRunning Apriori")
+
+        self.frequent_itemsets = apriori(self.transaction_data, min_support=min_support, use_colnames=True)
+
+        print(f"Found {len(self.frequent_itemsets)} frequent itemsets")
+
+        return self.frequent_itemsets
+    
+    def run_fp(self, min_support=0.05):
+        print("\nRunning FP-Growth")
+
+        self.frequent_itemsets = fpgrowth(self.transaction_data, min_support=min_support, use_colnames=True)
+
+        print(f"Found {len(self.frequent_itemsets)} frequent itemsets")
+
+        return self.frequent_itemsets
+
+    def generate_rules(self, min_confidence=0.5, metric="lift"):
+        print("\nGenerating association rules")
+
+        self.rules= association_rules(self.frequent_itemsets, metric=metric, min_threshold=min_confidence)
+
+        #sorting the rules
+        self.rules = self.rules.sort_values(by='lift', ascending=False)
+
+        print(f"Generated {len(self.rules)} rules")
+
+        return self.rules
+    
+
+    def display_top_rules(self, top_n=10):
+        print(f"\nTop {top_n} Association Rules:\n")
+
+        for i, row in self.rules.head(top_n).iterrows():
+            antecedents = ', '.join(list(row['antecedents']))
+            consequents = ', '.join(list(row['consequents']))
+
+            print(f"Rule {i}:")
+            print(f"  IF [{antecedents}] THEN [{consequents}]")
+            print(f"  Support: {row['support']:.3f}")
+            print(f"  Confidence: {row['confidence']:.3f}")
+            print(f"  Lift: {row['lift']:.3f}")
+            print("-" * 40)
 
 #main method
 
 if __name__ == "__main__":
-    # run complete preprocessing pipeline
+    #run complete preprocessing pipeline
     preprocessor = run_complete_preprocessing_pipeline(dataset)
 
-    # get the preprocessed data
+    #get the preprocessed data
     processed_data = preprocessor.get_preprocessed_data()
 
-    # display final results
+    #display final results
     print("\nCompleted preprocessing - Summary")
     print(f"\nOriginal dataset shape: {dataset.shape}")
     print(f"Processed dataset shape: {processed_data.shape}")
@@ -843,35 +934,53 @@ if __name__ == "__main__":
     print(f"Numerical columns: {len(numerical_cols)}")
     print(f"Categorical columns: {len(categorical_cols)}")
 
-    # sample of processed data
+    #sample of processed data
     print("\nSample of preprocessed data (first 5 rows):")
     print(processed_data.head())
 
     print("\nThe preprocessed data is ready for clustering and classification!")
 
-    # clustering portion of main method 3/4/26
+                                                                                    #clustering portion of main method 3/4/26
 
     print("Run Clustering Analysis")
 
-    # initialize clustering
+    #initialize clustering
     clustering = ShopWiseClustering(processed_data)
 
-    # prepare data and find optimal clusters
+    #prepare data and find optimal clusters
     X = clustering.prepare_clustering_data()
     optimal_k, sil_scores, db_scores = clustering.find_optimal_clusters(X, max_clusters=8)
 
-    # perform clustering with optimal k (or use 4 as default since it is balanced for shopping trends, per google...)
+    #perform clustering with optimal k (or use 4 as default since it is balanced for shopping trends, per google...)
     n_clusters = optimal_k if optimal_k else 4
     clustering.perform_clustering(n_clusters=n_clusters)
 
-    # analyze clusters
+    #analyze clusters
     cluster_profiles = clustering.analyze_clusters()
 
-    # get data with cluster labels
+    #get data with cluster labels
     clustered_data = clustering.get_clustered_data()
 
-    # save clustered data
+    #save clustered data
     clustered_data.to_csv('clustered_shopping_trends.csv', index=False)
     print("\nClustered data saved to 'clustered_shopping_trends.csv'")
 
     print("\nClustering pipeline completed")
+
+    #association start
+    print("\nRunning Association Rule Mining")
+
+    #initialzing association
+    association = shopWiseAssociation(processed_data)
+
+    #preparing the transactions
+    association.prepare_transactions()
+
+    #running the apriori algorithm with a min support of 5% can be tweaked to change the support or to fp growth instead of apriori by running run_fpgrowth instead
+    association.run_apriori(min_support=0.1)
+
+    #generating association rules
+    association.generate_rules(min_confidence=0.7)
+
+    #displaying the top rules
+    association.display_top_rules(top_n=10)
