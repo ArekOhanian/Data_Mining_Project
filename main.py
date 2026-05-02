@@ -14,7 +14,7 @@ class DummyMain:
 
 sys.modules['__main__'] = DummyMain()
 
-from Project import ShopWisePreprocessor, ShopWiseClustering, shopWiseAssociation
+from project import ShopWisePreprocessor, ShopWiseClustering, shopWiseAssociation
 
 #groq
 
