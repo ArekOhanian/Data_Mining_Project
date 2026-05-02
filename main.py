@@ -20,7 +20,7 @@ from project import ShopWisePreprocessor, ShopWiseClustering, shopWiseAssociatio
 
 from groq import Groq
 
-GROQ_API_KEY = "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"
+GROQ_API_KEY = "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"
 client = Groq(api_key=GROQ_API_KEY)
 
 eel.init('web')
